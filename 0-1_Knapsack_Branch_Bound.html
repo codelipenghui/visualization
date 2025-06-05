@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0/1 Knapsack - Branch & Bound Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; 
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; 
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; 
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; 
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; 
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; 
+            border-color: #334155;
+        }
+        .log-area {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 0.75rem;
+            min-height: 100px;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 300px; 
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; 
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { 
+             accent-color: #64748b; 
+        }
+        .tree-visualization {
+            min-height: 200px;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            overflow: auto; 
+            background-color: #ffffff;
+            position: relative; /* For SVG overlay positioning */
+        }
+        .tree-svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows interaction with nodes below */
+            z-index: 0; /* Below nodes */
+        }
+        .node {
+            background-color: #f1f5f9; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 0.25rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.7rem;
+            margin: 0.5rem;
+            display: inline-block;
+            min-width: 130px; 
+            text-align: left;
+            vertical-align: top; 
+            position: relative; /* For z-index to be above lines if needed */
+            z-index: 1;
+        }
+        .node.active {
+            border-color: #334155; 
+            background-color: #e2e8f0; 
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .node.pruned {
+            background-color: #fee2e2; 
+            border-color: #fca5a5; 
+            color: #7f1d1d; 
+            text-decoration: line-through;
+        }
+        .node.solution { 
+            background-color: #d1fae5; 
+            border-color: #6ee7b7; 
+            color: #065f46; 
+        }
+        .node-details span { display: block; margin-bottom: 2px; }
+        .tree-level { 
+            margin-bottom: 10px;
+            text-align: center; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-5xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Branch & Bound</h1>
+            <p class="text-md text-slate-500 mt-1">Visualization</p>
+        </header>
+
+        <!-- Input Section -->
+        <section id="input-section" class="mb-6">
+            <h2 class="section-title">Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="item-weights" class="block label-text mb-1">Item Weights (csv):</label>
+                    <input type="text" id="item-weights" value="10,20,30" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="item-values" class="block label-text mb-1">Item Values (csv):</label>
+                    <input type="text" id="item-values" value="60,100,120" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="knapsack-capacity" class="block label-text mb-1">Knapsack Capacity:</label>
+                    <input type="number" id="knapsack-capacity" value="50" class="input-field block w-full">
+                </div>
+            </div>
+            <div id="input-error" class="mt-2 text-xs text-red-500"></div>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-btn" class="btn btn-primary">Start</button>
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="speed-slider" class="mr-2 label-text">Speed:</label>
+                    <input type="range" id="speed-slider" min="100" max="2000" value="700" step="100" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">700ms</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Visualization Section (Tree) -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">Branch & Bound Tree</h3>
+            <div id="tree-visualization-area" class="tree-visualization">
+                <svg id="tree-svg-overlay" class="tree-svg-overlay"></svg>
+                <p id="tree-placeholder" class="text-slate-400 text-sm">Tree will be visualized here.</p>
+            </div>
+        </section>
+
+        <!-- Current Best Solution and Log -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Current Best Solution</h3>
+                <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
+                <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
+                <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; Knapsack B&B Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const weightsInput = document.getElementById('item-weights');
+        const valuesInput = document.getElementById('item-values');
+        const capacityInput = document.getElementById('knapsack-capacity');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValueSpan = document.getElementById('speed-value');
+        const treeVisualizationArea = document.getElementById('tree-visualization-area');
+        const treeSvgOverlay = document.getElementById('tree-svg-overlay');
+        const treePlaceholder = document.getElementById('tree-placeholder');
+        const logArea = document.getElementById('log-area');
+        
+        const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
+        const bestWeightOutput = document.getElementById('best-weight-output').querySelector('span');
+        const bestItemsOutput = document.getElementById('best-items-output').querySelector('span');
+        const inputError = document.getElementById('input-error');
+
+        let items = []; 
+        let W_capacity = 0;
+        let N_items = 0;
+        
+        let animationSpeed = 700;
+        let isSolving = false;
+        let isPaused = false;
+        let autoplayIntervalId = null;
+        let solvingQueue = []; 
+        let nodeIdCounter = 0;
+        let nodeMap = new Map(); 
+
+        let globalBestSolution = { value: -1, weight: 0, items_taken_indices: [] }; 
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function validateAndParseInputs() {
+            const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const capStr = capacityInput.value;
+
+            if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
+                inputError.textContent = "Error: All parameters required.";
+                return false;
+            }
+            if (weightsStr.length !== valuesStr.length) {
+                inputError.textContent = "Error: Item weights and values must have the same count.";
+                return false;
+            }
+             if (weightsStr.length > 5) { 
+                inputError.textContent = "Error: Max 5 items for this visualization due to tree complexity.";
+                return false;
+            }
+
+            items = [];
+            try {
+                const parsedWeights = weightsStr.map(Number);
+                const parsedValues = valuesStr.map(Number);
+                W_capacity = parseInt(capStr);
+
+                if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
+                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                    return false;
+                }
+                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
+                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                    return false;
+                }
+
+                for (let i = 0; i < parsedWeights.length; i++) {
+                    items.push({
+                        id: i + 1, 
+                        original_index: i, 
+                        weight: parsedWeights[i],
+                        value: parsedValues[i],
+                        ratio: parsedWeights[i] > 0 ? parsedValues[i] / parsedWeights[i] : 0 
+                    });
+                }
+                N_items = items.length;
+                items.sort((a, b) => b.ratio - a.ratio);
+
+
+            } catch (e) {
+                inputError.textContent = "Error: Input parsing failed.";
+                return false;
+            }
+            
+            inputError.textContent = "";
+            return true;
+        }
+
+        function createNodeElement(node) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'node';
+            nodeDiv.id = `node-${node.id}`;
+            const itemBeingConsidered = node.level < N_items ? items[node.level].id : 'Leaf'; 
+            nodeDiv.innerHTML = `
+                <div class="node-details">
+                    <span>ID: ${node.id} (D${node.depth})</span>
+                    <span>Item: I-${itemBeingConsidered}</span>
+                    <span>V: ${node.current_value.toFixed(1)}, W: ${node.current_weight.toFixed(1)}</span>
+                    <span>UB: ${node.upper_bound.toFixed(1)}</span>
+                    <span>Path: [${node.path.map(idx => items.find(it => it.original_index === idx).id).join(',')}]</span>
+                </div>
+            `;
+            return nodeDiv;
+        }
+        
+        function drawLines() {
+            treeSvgOverlay.innerHTML = ''; 
+            nodeMap.forEach(node => {
+                if (node.parentId !== null && nodeMap.has(node.parentId)) {
+                    const childEl = document.getElementById(`node-${node.id}`);
+                    const parentEl = document.getElementById(`node-${node.parentId}`);
+
+                    if (childEl && parentEl) {
+                        const treeRect = treeVisualizationArea.getBoundingClientRect();
+                        
+                        const parentRect = parentEl.getBoundingClientRect();
+                        const childRect = childEl.getBoundingClientRect();
+
+                        const x1 = (parentRect.left + parentRect.width / 2) - treeRect.left + treeVisualizationArea.scrollLeft;
+                        const y1 = parentRect.bottom - treeRect.top + treeVisualizationArea.scrollTop;
+                        const x2 = (childRect.left + childRect.width / 2) - treeRect.left + treeVisualizationArea.scrollLeft;
+                        const y2 = childRect.top - treeRect.top + treeVisualizationArea.scrollTop;
+
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', x1);
+                        line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', '#cbd5e1'); 
+                        line.setAttribute('stroke-width', '1');
+                        treeSvgOverlay.appendChild(line);
+                    }
+                }
+            });
+            treeSvgOverlay.style.width = treeVisualizationArea.scrollWidth + 'px';
+            treeSvgOverlay.style.height = treeVisualizationArea.scrollHeight + 'px';
+        }
+
+
+        function renderTree() {
+            const existingNodes = treeVisualizationArea.querySelectorAll('.node, .tree-level');
+            existingNodes.forEach(el => el.remove());
+            if (treePlaceholder) treePlaceholder.style.display = nodeMap.size === 0 ? 'block' : 'none';
+
+            if (nodeMap.size === 0) return;
+
+            const levels = new Map(); 
+            nodeMap.forEach(node => {
+                if (!levels.has(node.depth)) levels.set(node.depth, []);
+                levels.get(node.depth).push(node);
+            });
+
+            const sortedLevels = Array.from(levels.entries()).sort((a, b) => a[0] - b[0]);
+
+            sortedLevels.forEach(([depth, nodesInLevel]) => {
+                const levelDiv = document.createElement('div');
+                levelDiv.className = 'tree-level'; 
+                
+                nodesInLevel.sort((a,b) => a.id - b.id); 
+
+                nodesInLevel.forEach(node => {
+                    if (!node.element || !document.getElementById(node.element.id)) { 
+                        node.element = createNodeElement(node);
+                    }
+                    node.element.classList.remove('active', 'pruned', 'solution'); 
+                    if (node.active) node.element.classList.add('active');
+                    if (node.pruned) node.element.classList.add('pruned');
+                    if (node.isSolution) node.element.classList.add('solution');
+                    levelDiv.appendChild(node.element);
+                });
+                treeVisualizationArea.appendChild(levelDiv);
+            });
+            requestAnimationFrame(drawLines); 
+        }
+
+
+        function calculateUpperBound(current_value, current_weight, level, item_decisions_map) {
+            let bound = current_value;
+            let temp_weight = current_weight;
+            
+            for (let i = 0; i < N_items; i++) {
+                const item = items[i]; 
+                
+                if (item_decisions_map[item.original_index] !== undefined) {
+                    continue; 
+                }
+
+                if (temp_weight + item.weight <= W_capacity) {
+                    temp_weight += item.weight;
+                    bound += item.value;
+                } else {
+                    const remainingCapacity = W_capacity - temp_weight;
+                    if (remainingCapacity > 0 && item.weight > 0) { 
+                         bound += remainingCapacity * item.ratio; 
+                    }
+                    break; 
+                }
+            }
+            return bound;
+        }
+
+
+        async function branchAndBoundStep() {
+            if (solvingQueue.length === 0) {
+                addLog("Search queue is empty. Algorithm finished.");
+                finalizeSolution();
+                return false; 
+            }
+
+            const currentNode = solvingQueue.pop(); 
+            nodeMap.get(currentNode.id).active = true; 
+            
+            addLog(`Exploring Node ${currentNode.id}: Deciding for Item (ID) ${currentNode.level < N_items ? items[currentNode.level].id : 'Leaf'}, Path [${currentNode.path.map(idx=>items.find(it=>it.original_index===idx).id).join(',')}] CurrV=${currentNode.current_value.toFixed(1)}, CurrW=${currentNode.current_weight.toFixed(1)}, UB=${currentNode.upper_bound.toFixed(1)}`);
+            renderTree(); 
+            await sleep(animationSpeed);
+
+            if (currentNode.upper_bound < globalBestSolution.value) {
+                addLog(`  Node ${currentNode.id} Pruned: Upper Bound (${currentNode.upper_bound.toFixed(1)}) < Global Best (${globalBestSolution.value.toFixed(1)})`);
+                nodeMap.get(currentNode.id).pruned = true;
+                nodeMap.get(currentNode.id).active = false;
+                renderTree();
+                await sleep(animationSpeed);
+                return true; 
+            }
+
+            if (currentNode.level === N_items) { 
+                addLog(`  Node ${currentNode.id} is a leaf node.`);
+                if (currentNode.current_value > globalBestSolution.value) {
+                    globalBestSolution.value = currentNode.current_value;
+                    globalBestSolution.weight = currentNode.current_weight;
+                    globalBestSolution.items_taken_indices = [...currentNode.path];
+                    addLog(`    New Global Best Solution! Value: ${globalBestSolution.value.toFixed(1)}, Items: [${globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(',')}]`);
+                    bestValueOutput.textContent = globalBestSolution.value.toFixed(1);
+                    bestWeightOutput.textContent = globalBestSolution.weight.toFixed(1);
+                    bestItemsOutput.textContent = globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(', ') || "None";
+                    nodeMap.get(currentNode.id).isSolution = true;
+                } else {
+                     addLog(`    Leaf solution value ${currentNode.current_value.toFixed(1)} not better than current best ${globalBestSolution.value.toFixed(1)}.`);
+                }
+                nodeMap.get(currentNode.id).active = false;
+                renderTree();
+                await sleep(animationSpeed);
+                return true;
+            }
+
+            const itemToDecide = items[currentNode.level]; 
+
+            nodeIdCounter++;
+            const excludeNode = {
+                id: nodeIdCounter,
+                parentId: currentNode.id,
+                depth: currentNode.depth + 1,
+                level: currentNode.level + 1, 
+                current_value: currentNode.current_value,
+                current_weight: currentNode.current_weight,
+                path: [...currentNode.path], 
+                itemDecisions: {...currentNode.itemDecisions, [itemToDecide.original_index]: 0},
+                pruned: false, active: false, isSolution: false
+            };
+            excludeNode.upper_bound = calculateUpperBound(excludeNode.current_value, excludeNode.current_weight, excludeNode.level, excludeNode.itemDecisions);
+            excludeNode.element = createNodeElement(excludeNode);
+            nodeMap.set(excludeNode.id, excludeNode); 
+            solvingQueue.push(excludeNode); 
+            addLog(`  Branching from Node ${currentNode.id} on Item ${itemToDecide.id} (orig_idx ${itemToDecide.original_index}):`);
+            addLog(`    Created Node ${excludeNode.id} (Exclude Item ${itemToDecide.id}): UB=${excludeNode.upper_bound.toFixed(1)}`);
+
+            if (currentNode.current_weight + itemToDecide.weight <= W_capacity) {
+                nodeIdCounter++;
+                const includeNode = {
+                    id: nodeIdCounter,
+                    parentId: currentNode.id,
+                    depth: currentNode.depth + 1,
+                    level: currentNode.level + 1,
+                    current_value: currentNode.current_value + itemToDecide.value,
+                    current_weight: currentNode.current_weight + itemToDecide.weight,
+                    path: [...currentNode.path, itemToDecide.original_index], 
+                    itemDecisions: {...currentNode.itemDecisions, [itemToDecide.original_index]: 1},
+                    pruned: false, active: false, isSolution: false
+                };
+                includeNode.upper_bound = calculateUpperBound(includeNode.current_value, includeNode.current_weight, includeNode.level, includeNode.itemDecisions);
+                includeNode.element = createNodeElement(includeNode);
+                nodeMap.set(includeNode.id, includeNode); 
+                solvingQueue.push(includeNode); 
+                addLog(`    Created Node ${includeNode.id} (Include Item ${itemToDecide.id}): UB=${includeNode.upper_bound.toFixed(1)}`);
+            } else {
+                 addLog(`    Cannot include Item ${itemToDecide.id} (Weight ${itemToDecide.weight}): Exceeds capacity.`);
+            }
+            
+            nodeMap.get(currentNode.id).active = false;
+            renderTree(); 
+            await sleep(animationSpeed);
+            return true; 
+        }
+        
+        function startAutoplayAnimation() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            isPaused = false;
+            addLog("--- Autoplay Resumed/Started ---");
+
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+
+            autoplayIntervalId = setInterval(async () => {
+                try {
+                    if (isPaused || solvingQueue.length === 0) {
+                        if (solvingQueue.length === 0 && isSolving) {
+                            pauseAutoplayAnimation(); // Clear interval
+                            finalizeSolution();
+                        }
+                        return;
+                    }
+                    const continueSolving = await branchAndBoundStep();
+                    if (!continueSolving && isSolving) { // Step returned false, meaning queue empty or finished
+                        pauseAutoplayAnimation(); // Clear interval
+                        finalizeSolution();
+                    }
+                } catch (e) {
+                    console.error("Error in B&B autoplay interval:", e);
+                    addLog("RUNTIME ERROR in autoplay: " + e.message);
+                    if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+                    finalizeSolution(); 
+                }
+            }, animationSpeed * 1.2);
+        }
+
+        function pauseAutoplayAnimation() {
+            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isPaused = true;
+            addLog("--- Autoplay Paused ---");
+
+            if (isSolving && solvingQueue.length > 0) {
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+            } else if (isSolving && solvingQueue.length === 0) { // Paused, but queue became empty
+                 finalizeSolution();
+            }
+        }
+
+        function initializeAndRun() {
+            if (!validateAndParseInputs()) return;
+            isSolving = true;
+            isPaused = false; 
+            
+            logArea.innerHTML = '';
+            treeVisualizationArea.innerHTML = ''; 
+            if(treePlaceholder) treePlaceholder.style.display = 'block';
+            addLog("--- Starting Branch & Bound ---");
+
+            globalBestSolution = { value: -1, weight: 0, items_taken_indices: [] }; 
+            bestValueOutput.textContent = "0"; 
+            bestWeightOutput.textContent = "0";
+            bestItemsOutput.textContent = "None";
+            nodeIdCounter = 0;
+            nodeMap.clear(); 
+            
+            const rootNode = {
+                id: nodeIdCounter,
+                parentId: null,
+                depth: 0,
+                level: 0, 
+                current_value: 0,
+                current_weight: 0,
+                path: [], 
+                itemDecisions: {}, 
+                pruned: false, active: false, isSolution: false
+            };
+            rootNode.upper_bound = calculateUpperBound(rootNode.current_value, rootNode.current_weight, rootNode.level, rootNode.itemDecisions);
+            rootNode.element = createNodeElement(rootNode);
+            nodeMap.set(rootNode.id, rootNode);
+            solvingQueue = [rootNode]; // Initialize queue with root for DFS
+            renderTree(); 
+
+            startAutoplayAnimation();
+        }
+
+
+        function finalizeSolution() {
+            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            addLog("--- Branch & Bound Finished ---");
+             if (globalBestSolution.value <= -1) { 
+                addLog("No feasible solution found that improves initial state.");
+                bestValueOutput.textContent = "0"; 
+                bestWeightOutput.textContent = "0";
+                bestItemsOutput.textContent = "None";
+            } else {
+                addLog(`Final Best Solution - Value: ${globalBestSolution.value.toFixed(1)}, Weight: ${globalBestSolution.weight.toFixed(1)}, Items: [${globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(',') || 'None'}]`);
+            }
+            
+            startBtn.disabled = false;
+            stepBtn.disabled = true; 
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+            renderTree(); 
+        }
+
+        function resetAll() {
+            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+
+            weightsInput.value = "10,20,30"; 
+            valuesInput.value = "60,100,120"; 
+            capacityInput.value = "50";    
+            speedSlider.value = "700"; 
+            animationSpeed = 700;
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+
+            inputError.textContent = "";
+            treeVisualizationArea.innerHTML = '<p id="tree-placeholder" class="text-slate-400 text-sm">Tree will be visualized here.</p>';
+            treeSvgOverlay.innerHTML = ''; 
+
+            logArea.innerHTML = ''; 
+            addLog("Log messages will appear here..."); 
+            
+            bestValueOutput.textContent = "-";
+            bestWeightOutput.textContent = "-";
+            bestItemsOutput.textContent = "-";
+
+            items = [];
+            W_capacity = 0;
+            N_items = 0;
+            solvingQueue = [];
+            nodeMap.clear();
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        // Event Listeners
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        startBtn.addEventListener('click', initializeAndRun);
+
+        stepBtn.addEventListener('click', async () => {
+            if (!isSolving || solvingQueue.length === 0) {
+                if (solvingQueue.length === 0 && isSolving) finalizeSolution();
+                return;
+            }
+            // If it was auto-playing, pauseAutoplayAnimation would have been called by Pause button
+            // This step implies manual stepping from a paused state.
+            isPaused = true; // Ensure it's marked as paused for button logic after step
+            
+            const continueSolving = await branchAndBoundStep();
+            if (!continueSolving) {
+                finalizeSolution();
+            } else { 
+                 // Re-enable step/auto if more steps exist and it's paused
+                 startBtn.disabled = true;
+                 stepBtn.disabled = solvingQueue.length === 0;
+                 autoBtn.disabled = solvingQueue.length === 0;
+                 pauseBtn.disabled = true; // Cannot pause if not in autoplay
+                 resetBtn.disabled = false;
+            }
+        });
+
+        autoBtn.addEventListener('click', () => { // This now acts as "Resume Autoplay"
+            if (!isSolving || solvingQueue.length === 0 || autoplayIntervalId) return; // Don't restart if already auto
+            startAutoplayAnimation(); 
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+             if (isSolving && autoplayIntervalId) { // Only pause if autoplay is active
+                pauseAutoplayAnimation();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetAll);
+        
+        // Initial call
+        resetAll();
+
+    </script>
+</body>
+</html>

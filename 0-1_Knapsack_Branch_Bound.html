@@ -6,6 +6,7 @@
     <title>0/1 Knapsack - Branch & Bound Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -90,7 +91,7 @@
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 300px; 
+            max-height: 250px; 
             overflow-y: auto;
             border-radius: 0.375rem;
         }
@@ -113,7 +114,7 @@
             border-radius: 0.375rem;
             overflow: auto; 
             background-color: #ffffff;
-            position: relative; /* For SVG overlay positioning */
+            position: relative; 
         }
         .tree-svg-overlay {
             position: absolute;
@@ -121,8 +122,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Allows interaction with nodes below */
-            z-index: 0; /* Below nodes */
+            pointer-events: none; 
+            z-index: 0; 
         }
         .node {
             background-color: #f1f5f9; 
@@ -135,7 +136,7 @@
             min-width: 130px; 
             text-align: left;
             vertical-align: top; 
-            position: relative; /* For z-index to be above lines if needed */
+            position: relative; 
             z-index: 1;
         }
         .node.active {
@@ -159,16 +160,71 @@
             margin-bottom: 10px;
             text-align: center; 
         }
+        .code-visualization {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.75rem; 
+            line-height: 1.6; 
+            max-height: 0; 
+            opacity: 0;
+            overflow: hidden; 
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
+            margin-top: 0;
+        }
+        .code-visualization.expanded {
+            max-height: 70vh; 
+            opacity: 1;
+            margin-top: 1rem; 
+            overflow-y: auto; 
+        }
+        .code-line {
+            padding: 0.15rem 0.5rem; 
+            border-radius: 0.125rem;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre; 
+        }
+        .python-keyword { color: #0ea5e9; }
+        .python-function { color: #2563eb; }
+        .python-parameters { color: #475569; }
+        .python-comment { color: #64748b; font-style: italic; }
+        .python-variable { color: #1e293b; }
+        .python-operator { color: #ec4899; }
+        .python-number { color: #f59e0b; }
+        
+        .highlight-code-active { background-color: #e2e8f0; }
+        .highlight-code-branch { background-color: #ccfbf1; }
+        .highlight-code-prune { background-color: #fee2e2; }
+        .highlight-code-solution { background-color: #dcfce7; }
+
+        .collapsible-title {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-title::after {
+            content: '[+]'; 
+            color: #64748b; /* slate-500 */
+            font-size: 0.8em;
+            margin-left: 8px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .collapsible-title.expanded::after {
+            content: '[-]'; 
+        }
     </style>
 </head>
 <body>
-    <div class="container mx-auto max-w-5xl container-card p-4 md:p-8 my-8">
+    <div class="container mx-auto max-w-7xl container-card p-4 md:p-8 my-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Branch & Bound</h1>
             <p class="text-md text-slate-500 mt-1">Visualization</p>
         </header>
 
-        <!-- Input Section -->
         <section id="input-section" class="mb-6">
             <h2 class="section-title">Parameters</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -188,7 +244,6 @@
             <div id="input-error" class="mt-2 text-xs text-red-500"></div>
         </section>
 
-        <!-- Controls Section -->
         <section id="controls-section" class="mb-6">
             <h2 class="section-title">Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
@@ -205,30 +260,72 @@
             </div>
         </section>
         
-        <!-- Visualization Section (Tree) -->
-        <section class="mb-6">
-            <h3 class="text-lg font-semibold mb-2 text-slate-700">Branch & Bound Tree</h3>
-            <div id="tree-visualization-area" class="tree-visualization">
-                <svg id="tree-svg-overlay" class="tree-svg-overlay"></svg>
-                <p id="tree-placeholder" class="text-slate-400 text-sm">Tree will be visualized here.</p>
-            </div>
-        </section>
+        <!-- Main content area with two columns -->
+        <div class="flex flex-col md:flex-row gap-6 mt-6">
+            <!-- Left Column -->
+            <div class="md:w-3/5 space-y-6">
+                <section>
+                    <h3 class="text-lg font-semibold mb-2 text-slate-700">Branch & Bound Tree</h3>
+                    <div id="tree-visualization-area" class="tree-visualization">
+                        <svg id="tree-svg-overlay" class="tree-svg-overlay"></svg>
+                        <p id="tree-placeholder" class="text-slate-400 text-sm">Tree will be visualized here.</p>
+                    </div>
+                </section>
 
-        <!-- Current Best Solution and Log -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="section-title mb-2">Current Best Solution</h3>
-                <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
-                <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
-                <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+                <section class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="section-title mb-2">Current Best Solution</h3>
+                        <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
+                        <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
+                        <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+                    </div>
+                    <div>
+                        <h3 class="section-title mb-2">Log</h3>
+                        <div id="log-area" class="log-area">
+                            <p class="text-slate-400">Log messages will appear here...</p>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div>
-                <h3 class="section-title mb-2">Log</h3>
-                <div id="log-area" class="log-area">
-                    <p class="text-slate-400">Log messages will appear here...</p>
-                </div>
+
+            <!-- Right Column -->
+            <div class="md:w-2/5">
+                <section>
+                    <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
+                    <div id="code-visualization-area-bnb" class="code-visualization expanded">
+                        <div class="code-line" data-line-bnb="1"><span class="python-keyword">def</span> <span class="python-function">branch_and_bound</span>(<span class="python-parameters">items, capacity</span>):</div>
+                        <div class="code-line" data-line-bnb="2">  <span class="python-variable">priority_queue</span> <span class="python-operator">=</span> [<span class="python-variable">initial_node</span>] <span class="python-comment"># (UB, value, weight, level, path)</span></div>
+                        <div class="code-line" data-line-bnb="3">  <span class="python-variable">global_best_value</span> <span class="python-operator">=</span> <span class="python-number">0</span></div>
+                        <div class="code-line" data-line-bnb="4">  </div>
+                        <div class="code-line" data-line-bnb="5">  <span class="python-keyword">while</span> <span class="python-variable">priority_queue</span>:</div>
+                        <div class="code-line" data-line-bnb="6">    <span class="python-variable">current_node</span> <span class="python-operator">=</span> <span class="python-variable">priority_queue.pop</span>() <span class="python-comment"># Using LIFO for DFS-like behavior</span></div>
+                        <div class="code-line" data-line-bnb="7">    <span class="python-variable">ub, val, wt, lvl, path</span> <span class="python-operator">=</span> <span class="python-variable">current_node</span></div>
+                        <div class="code-line" data-line-bnb="8">    </div>
+                        <div class="code-line" data-line-bnb="9">    <span class="python-keyword">if</span> <span class="python-variable">ub</span> <span class="python-operator">&lt;=</span> <span class="python-variable">global_best_value</span>: <span class="python-comment"># Pruning by bound</span></div>
+                        <div class="code-line" data-line-bnb="10">     <span class="python-keyword">continue</span> </div>
+                        <div class="code-line" data-line-bnb="11"> </div>
+                        <div class="code-line" data-line-bnb="12">   <span class="python-keyword">if</span> <span class="python-variable">lvl</span> <span class="python-operator">==</span> <span class="python-variable">N_items</span>: <span class="python-comment"># Leaf node</span></div>
+                        <div class="code-line" data-line-bnb="13">     <span class="python-keyword">if</span> <span class="python-variable">val</span> <span class="python-operator">></span> <span class="python-variable">global_best_value</span>:</div>
+                        <div class="code-line" data-line-bnb="14">       <span class="python-variable">global_best_value</span> <span class="python-operator">=</span> <span class="python-variable">val</span></div>
+                        <div class="code-line" data-line-bnb="15">     <span class="python-keyword">continue</span></div>
+                        <div class="code-line" data-line-bnb="16"> </div>
+                        <div class="code-line" data-line-bnb="17">   <span class="python-comment"># Branch 1: Exclude item items[lvl]</span></div>
+                        <div class="code-line" data-line-bnb="18">   <span class="python-variable">node_exclude</span> <span class="python-operator">=</span> <span class="python-function">create_node</span>(<span class="python-parameters">val, wt, lvl + 1, path, excluded=True</span>)</div>
+                        <div class="code-line" data-line-bnb="19">   <span class="python-keyword">if</span> <span class="python-variable">node_exclude.ub</span> <span class="python-operator">></span> <span class="python-variable">global_best_value</span>:</div>
+                        <div class="code-line" data-line-bnb="20">     <span class="python-variable">priority_queue.append</span>(<span class="python-variable">node_exclude</span>)</div>
+                        <div class="code-line" data-line-bnb="21"> </div>
+                        <div class="code-line" data-line-bnb="22">   <span class="python-comment"># Branch 2: Include item items[lvl]</span></div>
+                        <div class="code-line" data-line-bnb="23">   <span class="python-keyword">if</span> <span class="python-variable">wt</span> <span class="python-operator">+</span> <span class="python-variable">items</span>[<span class="python-variable">lvl</span>].<span class="python-variable">weight</span> <span class="python-operator">&lt;=</span> <span class="python-variable">W_capacity</span>:</div>
+                        <div class="code-line" data-line-bnb="24">     <span class="python-variable">node_include</span> <span class="python-operator">=</span> <span class="python-function">create_node</span>(<span class="python-parameters">val_incl, wt_incl, lvl + 1, path_incl, included=True</span>)</div>
+                        <div class="code-line" data-line-bnb="25">     <span class="python-keyword">if</span> <span class="python-variable">node_include.ub</span> <span class="python-operator">></span> <span class="python-variable">global_best_value</span>:</div>
+                        <div class="code-line" data-line-bnb="26">       <span class="python-variable">priority_queue.append</span>(<span class="python-variable">node_include</span>)</div>
+                        <div class="code-line" data-line-bnb="27"> </div>
+                        <div class="code-line" data-line-bnb="28"> <span class="python-keyword">return</span> <span class="python-variable">global_best_value</span></div>
+                    </div>
+                </section>
             </div>
-        </section>
+        </div>
+
 
         <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
             <p class="text-xs text-slate-400">&copy; Knapsack B&B Visualizer</p>
@@ -249,6 +346,8 @@
         const treeVisualizationArea = document.getElementById('tree-visualization-area');
         const treeSvgOverlay = document.getElementById('tree-svg-overlay');
         const treePlaceholder = document.getElementById('tree-placeholder');
+        const codeVisualizationAreaBnB = document.getElementById('code-visualization-area-bnb'); 
+        const codeTitle = document.getElementById('code-title');
         const logArea = document.getElementById('log-area');
         
         const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
@@ -256,19 +355,19 @@
         const bestItemsOutput = document.getElementById('best-items-output').querySelector('span');
         const inputError = document.getElementById('input-error');
 
-        let items = []; 
-        let W_capacity = 0;
-        let N_items = 0;
+        var items = []; 
+        var W_capacity = 0; 
+        var N_items = 0; 
         
-        let animationSpeed = 700;
-        let isSolving = false;
-        let isPaused = false;
-        let autoplayIntervalId = null;
-        let solvingQueue = []; 
-        let nodeIdCounter = 0;
-        let nodeMap = new Map(); 
+        var animationSpeed = 700; 
+        var isSolving = false; 
+        var isPaused = false; 
+        var autoplayTimeoutId = null; 
+        var solvingQueue = []; 
+        var nodeIdCounter = 0; 
+        var nodeMap = new Map(); 
 
-        let globalBestSolution = { value: -1, weight: 0, items_taken_indices: [] }; 
+        var globalBestSolution = { value: -Infinity, weight: 0, items_taken_indices: [] }; 
 
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
@@ -283,21 +382,35 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
 
+        function clearCodeHighlights_BnB() {
+            const lines = codeVisualizationAreaBnB.querySelectorAll('.code-line');
+            lines.forEach(line => line.classList.remove('highlight-code-active', 'highlight-code-branch', 'highlight-code-prune', 'highlight-code-solution'));
+        }
+
+        function highlightCodeLine_BnB(lineNumber, type = 'active') {
+            clearCodeHighlights_BnB();
+            const line = codeVisualizationAreaBnB.querySelector(`.code-line[data-line-bnb="${lineNumber}"]`);
+            if (line) {
+                line.classList.add(`highlight-code-${type}`);
+                line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }
+        }
+
         function validateAndParseInputs() {
             const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
             const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
             const capStr = capacityInput.value;
 
             if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
-                inputError.textContent = "Error: All parameters required.";
+                if(inputError) inputError.textContent = "Error: All parameters required.";
                 return false;
             }
             if (weightsStr.length !== valuesStr.length) {
-                inputError.textContent = "Error: Item weights and values must have the same count.";
+                 if(inputError) inputError.textContent = "Error: Item weights and values must have the same count.";
                 return false;
             }
              if (weightsStr.length > 5) { 
-                inputError.textContent = "Error: Max 5 items for this visualization due to tree complexity.";
+                 if(inputError) inputError.textContent = "Error: Max 5 items for this visualization due to tree complexity.";
                 return false;
             }
 
@@ -308,11 +421,11 @@
                 W_capacity = parseInt(capStr);
 
                 if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
-                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                     if(inputError) inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
                     return false;
                 }
                  if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
-                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                      if(inputError) inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
                     return false;
                 }
 
@@ -330,11 +443,11 @@
 
 
             } catch (e) {
-                inputError.textContent = "Error: Input parsing failed.";
+                 if(inputError) inputError.textContent = "Error: Input parsing failed.";
                 return false;
             }
             
-            inputError.textContent = "";
+            if(inputError) inputError.textContent = "";
             return true;
         }
 
@@ -425,6 +538,15 @@
             requestAnimationFrame(drawLines); 
         }
 
+        function updateBestSolutionDisplay() { 
+            bestValueOutput.textContent = globalBestSolution.value.toFixed(1);
+            bestWeightOutput.textContent = globalBestSolution.weight.toFixed(1);
+            const itemIds = globalBestSolution.items_taken_indices.map(idx => {
+                const itemFound = items.find(it => it.original_index === idx);
+                return itemFound ? itemFound.id : '?';
+            }).join(', ');
+            bestItemsOutput.textContent = itemIds || "None";
+        }
 
         function calculateUpperBound(current_value, current_weight, level, item_decisions_map) {
             let bound = current_value;
@@ -453,159 +575,169 @@
 
 
         async function branchAndBoundStep() {
+            if (!isSolving) return false; // Added check
             if (solvingQueue.length === 0) {
                 addLog("Search queue is empty. Algorithm finished.");
+                highlightCodeLine_BnB(28); 
+                await sleep(animationSpeed);
                 finalizeSolution();
                 return false; 
             }
 
             const currentNode = solvingQueue.pop(); 
-            nodeMap.get(currentNode.id).active = true; 
+            const nodeFromMap = nodeMap.get(currentNode.id); // Use node from map
+            if (!nodeFromMap) {
+                 addLog(`Error: Node ${currentNode.id} not found in map during step. Skipping.`);
+                 return true; // Try next step
+            }
+            nodeFromMap.active = true; 
             
-            addLog(`Exploring Node ${currentNode.id}: Deciding for Item (ID) ${currentNode.level < N_items ? items[currentNode.level].id : 'Leaf'}, Path [${currentNode.path.map(idx=>items.find(it=>it.original_index===idx).id).join(',')}] CurrV=${currentNode.current_value.toFixed(1)}, CurrW=${currentNode.current_weight.toFixed(1)}, UB=${currentNode.upper_bound.toFixed(1)}`);
+            highlightCodeLine_BnB(6); 
+            addLog(`Exploring Node ${nodeFromMap.id}: Deciding for Item (ID) ${nodeFromMap.level < N_items ? items[nodeFromMap.level].id : 'Leaf'}, Path [${nodeFromMap.path.map(idx=>items.find(it=>it.original_index===idx).id).join(',')}] CurrV=${nodeFromMap.current_value.toFixed(1)}, CurrW=${nodeFromMap.current_weight.toFixed(1)}, UB=${nodeFromMap.upper_bound.toFixed(1)}`);
             renderTree(); 
             await sleep(animationSpeed);
+            if (!isSolving) { finalizeSolution(); return false; }
 
-            if (currentNode.upper_bound < globalBestSolution.value) {
-                addLog(`  Node ${currentNode.id} Pruned: Upper Bound (${currentNode.upper_bound.toFixed(1)}) < Global Best (${globalBestSolution.value.toFixed(1)})`);
-                nodeMap.get(currentNode.id).pruned = true;
-                nodeMap.get(currentNode.id).active = false;
+
+            highlightCodeLine_BnB(9); 
+            await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution(); return false; }
+
+            if (nodeFromMap.upper_bound <= globalBestSolution.value) { 
+                addLog(`  Node ${nodeFromMap.id} Pruned: Upper Bound (${nodeFromMap.upper_bound.toFixed(1)}) <= Global Best (${globalBestSolution.value.toFixed(1)})`);
+                highlightCodeLine_BnB(10, 'prune');
+                nodeFromMap.pruned = true;
+                nodeFromMap.active = false;
                 renderTree();
                 await sleep(animationSpeed);
+                if (!isSolving) { finalizeSolution(); return false; }
                 return true; 
             }
 
-            if (currentNode.level === N_items) { 
-                addLog(`  Node ${currentNode.id} is a leaf node.`);
-                if (currentNode.current_value > globalBestSolution.value) {
-                    globalBestSolution.value = currentNode.current_value;
-                    globalBestSolution.weight = currentNode.current_weight;
-                    globalBestSolution.items_taken_indices = [...currentNode.path];
+            highlightCodeLine_BnB(12); 
+            await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution(); return false; }
+
+            if (nodeFromMap.level === N_items) { 
+                addLog(`  Node ${nodeFromMap.id} is a leaf node.`);
+                highlightCodeLine_BnB(13, 'solution');
+                await sleep(animationSpeed/2);
+                if (!isSolving) { finalizeSolution(); return false; }
+
+                if (nodeFromMap.current_value > globalBestSolution.value) {
+                    globalBestSolution.value = nodeFromMap.current_value;
+                    globalBestSolution.weight = nodeFromMap.current_weight;
+                    globalBestSolution.items_taken_indices = [...nodeFromMap.path];
                     addLog(`    New Global Best Solution! Value: ${globalBestSolution.value.toFixed(1)}, Items: [${globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(',')}]`);
-                    bestValueOutput.textContent = globalBestSolution.value.toFixed(1);
-                    bestWeightOutput.textContent = globalBestSolution.weight.toFixed(1);
-                    bestItemsOutput.textContent = globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(', ') || "None";
-                    nodeMap.get(currentNode.id).isSolution = true;
+                    highlightCodeLine_BnB(14, 'solution');
+                    updateBestSolutionDisplay(); 
+                    nodeFromMap.isSolution = true;
                 } else {
-                     addLog(`    Leaf solution value ${currentNode.current_value.toFixed(1)} not better than current best ${globalBestSolution.value.toFixed(1)}.`);
+                     addLog(`    Leaf solution value ${nodeFromMap.current_value.toFixed(1)} not better than current best ${globalBestSolution.value.toFixed(1)}.`);
                 }
-                nodeMap.get(currentNode.id).active = false;
+                nodeFromMap.active = false;
+                highlightCodeLine_BnB(15); 
                 renderTree();
                 await sleep(animationSpeed);
+                if (!isSolving) { finalizeSolution(); return false; }
                 return true;
             }
 
-            const itemToDecide = items[currentNode.level]; 
+            const itemToDecide = items[nodeFromMap.level]; 
 
+            highlightCodeLine_BnB(18, 'branch');
+            await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution(); return false; }
             nodeIdCounter++;
             const excludeNode = {
                 id: nodeIdCounter,
-                parentId: currentNode.id,
-                depth: currentNode.depth + 1,
-                level: currentNode.level + 1, 
-                current_value: currentNode.current_value,
-                current_weight: currentNode.current_weight,
-                path: [...currentNode.path], 
-                itemDecisions: {...currentNode.itemDecisions, [itemToDecide.original_index]: 0},
+                parentId: nodeFromMap.id,
+                depth: nodeFromMap.depth + 1,
+                level: nodeFromMap.level + 1, 
+                current_value: nodeFromMap.current_value,
+                current_weight: nodeFromMap.current_weight,
+                path: [...nodeFromMap.path], 
+                itemDecisions: {...nodeFromMap.itemDecisions, [itemToDecide.original_index]: 0},
                 pruned: false, active: false, isSolution: false
             };
             excludeNode.upper_bound = calculateUpperBound(excludeNode.current_value, excludeNode.current_weight, excludeNode.level, excludeNode.itemDecisions);
             excludeNode.element = createNodeElement(excludeNode);
             nodeMap.set(excludeNode.id, excludeNode); 
-            solvingQueue.push(excludeNode); 
-            addLog(`  Branching from Node ${currentNode.id} on Item ${itemToDecide.id} (orig_idx ${itemToDecide.original_index}):`);
+            addLog(`  Branching from Node ${nodeFromMap.id} on Item ${itemToDecide.id}:`);
             addLog(`    Created Node ${excludeNode.id} (Exclude Item ${itemToDecide.id}): UB=${excludeNode.upper_bound.toFixed(1)}`);
+            
+            highlightCodeLine_BnB(19); await sleep(animationSpeed/3);
+            if (!isSolving) { finalizeSolution(); return false; }
+            if (excludeNode.upper_bound > globalBestSolution.value) {
+                highlightCodeLine_BnB(20, 'branch');
+                solvingQueue.push(excludeNode); 
+                addLog(`      Node ${excludeNode.id} added to queue.`);
+            } else {
+                 addLog(`      Node ${excludeNode.id} pruned (UB <= global best).`);
+                 nodeMap.get(excludeNode.id).pruned = true;
+            }
+            await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution(); return false; }
 
-            if (currentNode.current_weight + itemToDecide.weight <= W_capacity) {
+
+            highlightCodeLine_BnB(23, 'branch');
+            await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution(); return false; }
+            if (nodeFromMap.current_weight + itemToDecide.weight <= W_capacity) {
+                highlightCodeLine_BnB(24, 'branch');
+                await sleep(animationSpeed/2);
+                if (!isSolving) { finalizeSolution(); return false; }
                 nodeIdCounter++;
                 const includeNode = {
                     id: nodeIdCounter,
-                    parentId: currentNode.id,
-                    depth: currentNode.depth + 1,
-                    level: currentNode.level + 1,
-                    current_value: currentNode.current_value + itemToDecide.value,
-                    current_weight: currentNode.current_weight + itemToDecide.weight,
-                    path: [...currentNode.path, itemToDecide.original_index], 
-                    itemDecisions: {...currentNode.itemDecisions, [itemToDecide.original_index]: 1},
+                    parentId: nodeFromMap.id,
+                    depth: nodeFromMap.depth + 1,
+                    level: nodeFromMap.level + 1,
+                    current_value: nodeFromMap.current_value + itemToDecide.value,
+                    current_weight: nodeFromMap.current_weight + itemToDecide.weight,
+                    path: [...nodeFromMap.path, itemToDecide.original_index], 
+                    itemDecisions: {...nodeFromMap.itemDecisions, [itemToDecide.original_index]: 1},
                     pruned: false, active: false, isSolution: false
                 };
                 includeNode.upper_bound = calculateUpperBound(includeNode.current_value, includeNode.current_weight, includeNode.level, includeNode.itemDecisions);
                 includeNode.element = createNodeElement(includeNode);
                 nodeMap.set(includeNode.id, includeNode); 
-                solvingQueue.push(includeNode); 
                 addLog(`    Created Node ${includeNode.id} (Include Item ${itemToDecide.id}): UB=${includeNode.upper_bound.toFixed(1)}`);
+
+                highlightCodeLine_BnB(25); await sleep(animationSpeed/3);
+                if (!isSolving) { finalizeSolution(); return false; }
+                if (includeNode.upper_bound > globalBestSolution.value) {
+                    highlightCodeLine_BnB(26, 'branch');
+                    solvingQueue.push(includeNode); 
+                    addLog(`      Node ${includeNode.id} added to queue.`);
+                } else {
+                    addLog(`      Node ${includeNode.id} pruned (UB <= global best).`);
+                    nodeMap.get(includeNode.id).pruned = true;
+                }
+
             } else {
-                 addLog(`    Cannot include Item ${itemToDecide.id} (Weight ${itemToDecide.weight}): Exceeds capacity.`);
+                 addLog(`    Cannot include Item ${itemToDecide.id} (Weight ${itemToDecide.weight}): Exceeds capacity. Pruning 'include' branch.`);
+                 highlightCodeLine_BnB(17, 'prune'); 
             }
             
-            nodeMap.get(currentNode.id).active = false;
+            nodeFromMap.active = false; // Use nodeFromMap
             renderTree(); 
             await sleep(animationSpeed);
+            if (!isSolving) { finalizeSolution(); return false; }
             return true; 
         }
-        
-        function startAutoplayAnimation() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
-            isPaused = false;
-            addLog("--- Autoplay Resumed/Started ---");
 
-            startBtn.disabled = true;
-            stepBtn.disabled = true;
-            autoBtn.disabled = true;
-            pauseBtn.disabled = false;
-            resetBtn.disabled = false; 
 
-            autoplayIntervalId = setInterval(async () => {
-                try {
-                    if (isPaused || solvingQueue.length === 0) {
-                        if (solvingQueue.length === 0 && isSolving) {
-                            pauseAutoplayAnimation(); // Clear interval
-                            finalizeSolution();
-                        }
-                        return;
-                    }
-                    const continueSolving = await branchAndBoundStep();
-                    if (!continueSolving && isSolving) { // Step returned false, meaning queue empty or finished
-                        pauseAutoplayAnimation(); // Clear interval
-                        finalizeSolution();
-                    }
-                } catch (e) {
-                    console.error("Error in B&B autoplay interval:", e);
-                    addLog("RUNTIME ERROR in autoplay: " + e.message);
-                    if(autoplayIntervalId) clearInterval(autoplayIntervalId);
-                    finalizeSolution(); 
-                }
-            }, animationSpeed * 1.2);
-        }
+        function initializeAlgorithmState() {
+            if (!validateAndParseInputs()) return false;
 
-        function pauseAutoplayAnimation() {
-            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
-            isPaused = true;
-            addLog("--- Autoplay Paused ---");
-
-            if (isSolving && solvingQueue.length > 0) {
-                startBtn.disabled = true;
-                stepBtn.disabled = false;
-                autoBtn.disabled = false;
-                pauseBtn.disabled = true;
-                resetBtn.disabled = false;
-            } else if (isSolving && solvingQueue.length === 0) { // Paused, but queue became empty
-                 finalizeSolution();
-            }
-        }
-
-        function initializeAndRun() {
-            if (!validateAndParseInputs()) return;
-            isSolving = true;
-            isPaused = false; 
-            
+            // isSolving and isPaused will be set by the calling function (startBtn, stepBtn etc.)
             logArea.innerHTML = '';
             treeVisualizationArea.innerHTML = ''; 
             if(treePlaceholder) treePlaceholder.style.display = 'block';
             addLog("--- Starting Branch & Bound ---");
 
-            globalBestSolution = { value: -1, weight: 0, items_taken_indices: [] }; 
+            globalBestSolution = { value: -Infinity, weight: 0, items_taken_indices: [] }; 
             bestValueOutput.textContent = "0"; 
             bestWeightOutput.textContent = "0";
             bestItemsOutput.textContent = "None";
@@ -626,25 +758,91 @@
             rootNode.upper_bound = calculateUpperBound(rootNode.current_value, rootNode.current_weight, rootNode.level, rootNode.itemDecisions);
             rootNode.element = createNodeElement(rootNode);
             nodeMap.set(rootNode.id, rootNode);
-            solvingQueue = [rootNode]; // Initialize queue with root for DFS
+            solvingQueue = [rootNode];
             renderTree(); 
+            clearCodeHighlights_BnB();
+            return true;
+        }
+        
+        function scheduleNextAutoplayStep() {
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId); 
 
-            startAutoplayAnimation();
+            if (!isSolving || isPaused || solvingQueue.length === 0) {
+                if (solvingQueue.length === 0 && isSolving) {
+                    finalizeSolution(); 
+                }
+                if (isPaused && isSolving) {
+                    startBtn.disabled = true;
+                    stepBtn.disabled = solvingQueue.length === 0;
+                    autoBtn.disabled = solvingQueue.length === 0;
+                    pauseBtn.disabled = true;
+                    resetBtn.disabled = false;
+                }
+                return;
+            }
+
+            autoplayTimeoutId = setTimeout(async () => {
+                try {
+                    const continueSolving = await branchAndBoundStep();
+                    if (continueSolving && isSolving && !isPaused) { 
+                        scheduleNextAutoplayStep(); 
+                    } else if (isSolving) { 
+                        if(!isPaused && solvingQueue.length === 0) { 
+                             finalizeSolution();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error in B&B autoplay step:", e);
+                    addLog("RUNTIME ERROR in autoplay: " + e.message);
+                    finalizeSolution(); 
+                }
+            }, animationSpeed);
         }
 
 
+        function startAutoplayAnimation() {
+            isPaused = false;
+            addLog("--- Autoplay Resumed/Started ---");
+
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+
+            scheduleNextAutoplayStep(); 
+        }
+
+        function pauseAutoplayAnimation() {
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
+            isPaused = true;
+            addLog("--- Autoplay Paused ---");
+
+            if (isSolving) { 
+                startBtn.disabled = true;
+                stepBtn.disabled = solvingQueue.length === 0;
+                autoBtn.disabled = solvingQueue.length === 0;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+            }
+        }
+        
         function finalizeSolution() {
-            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             isSolving = false;
             isPaused = false;
+            clearCodeHighlights_BnB();
             addLog("--- Branch & Bound Finished ---");
-             if (globalBestSolution.value <= -1) { 
-                addLog("No feasible solution found that improves initial state.");
+            
+            if (globalBestSolution.value === -Infinity || (globalBestSolution.value === 0 && globalBestSolution.items_taken_indices.length === 0 && N_items > 0 && items.some(it => it.value > 0)) ) { 
+                addLog("No feasible solution found or no solution better than empty knapsack.");
                 bestValueOutput.textContent = "0"; 
                 bestWeightOutput.textContent = "0";
                 bestItemsOutput.textContent = "None";
             } else {
+                 updateBestSolutionDisplay(); 
                 addLog(`Final Best Solution - Value: ${globalBestSolution.value.toFixed(1)}, Weight: ${globalBestSolution.weight.toFixed(1)}, Items: [${globalBestSolution.items_taken_indices.map(idx=>items.find(it=>it.original_index===idx).id).join(',') || 'None'}]`);
             }
             
@@ -657,8 +855,8 @@
         }
 
         function resetAll() {
-            if(autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             isSolving = false;
             isPaused = false;
 
@@ -669,12 +867,13 @@
             animationSpeed = 700;
             speedValueSpan.textContent = `${animationSpeed}ms`;
 
-            inputError.textContent = "";
+            if(inputError) inputError.textContent = ""; 
             treeVisualizationArea.innerHTML = '<p id="tree-placeholder" class="text-slate-400 text-sm">Tree will be visualized here.</p>';
             treeSvgOverlay.innerHTML = ''; 
 
             logArea.innerHTML = ''; 
             addLog("Log messages will appear here..."); 
+            clearCodeHighlights_BnB();
             
             bestValueOutput.textContent = "-";
             bestWeightOutput.textContent = "-";
@@ -685,6 +884,8 @@
             N_items = 0;
             solvingQueue = [];
             nodeMap.clear();
+            globalBestSolution = { value: -Infinity, weight: 0, items_taken_indices: [] };
+
 
             startBtn.disabled = false;
             stepBtn.disabled = true;
@@ -695,46 +896,67 @@
 
         // Event Listeners
         speedSlider.addEventListener('input', (e) => {
-            animationSpeed = parseInt(e.target.value);
+            animationSpeed = parseInt(e.target.value); 
             speedValueSpan.textContent = `${animationSpeed}ms`;
         });
         
-        startBtn.addEventListener('click', initializeAndRun);
+        startBtn.addEventListener('click', () => {
+            if (isSolving) return; // Prevent re-start if already solving
+            if (!initializeAlgorithmState()) return; 
+            
+            isSolving = true; // Set isSolving after successful initialization
+            isPaused = false;
+            startAutoplayAnimation();
+        });
 
         stepBtn.addEventListener('click', async () => {
-            if (!isSolving || solvingQueue.length === 0) {
-                if (solvingQueue.length === 0 && isSolving) finalizeSolution();
-                return;
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true; 
             }
-            // If it was auto-playing, pauseAutoplayAnimation would have been called by Pause button
-            // This step implies manual stepping from a paused state.
-            isPaused = true; // Ensure it's marked as paused for button logic after step
+            isPaused = true; 
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             
+            startBtn.disabled = true;
+            stepBtn.disabled = false; 
+            autoBtn.disabled = false; 
+            pauseBtn.disabled = true; 
+            resetBtn.disabled = false;
+
+
             const continueSolving = await branchAndBoundStep();
             if (!continueSolving) {
-                finalizeSolution();
+                // finalizeSolution(); // Called by branchAndBoundStep if queue is empty
             } else { 
-                 // Re-enable step/auto if more steps exist and it's paused
-                 startBtn.disabled = true;
                  stepBtn.disabled = solvingQueue.length === 0;
                  autoBtn.disabled = solvingQueue.length === 0;
-                 pauseBtn.disabled = true; // Cannot pause if not in autoplay
-                 resetBtn.disabled = false;
             }
         });
 
-        autoBtn.addEventListener('click', () => { // This now acts as "Resume Autoplay"
-            if (!isSolving || solvingQueue.length === 0 || autoplayIntervalId) return; // Don't restart if already auto
-            startAutoplayAnimation(); 
+        autoBtn.addEventListener('click', () => { 
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true; 
+            }
+            startAutoplayAnimation();
         });
         
         pauseBtn.addEventListener('click', () => {
-             if (isSolving && autoplayIntervalId) { // Only pause if autoplay is active
+             if (isSolving && !isPaused) { 
                 pauseAutoplayAnimation();
             }
         });
 
         resetBtn.addEventListener('click', resetAll);
+
+        if(codeTitle) { 
+            codeTitle.addEventListener('click', () => { 
+                codeVisualizationAreaBnB.classList.toggle('expanded');
+                codeTitle.classList.toggle('expanded');
+            });
+        }
+        
         
         // Initial call
         resetAll();

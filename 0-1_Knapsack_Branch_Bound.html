@@ -10,15 +10,11 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* slate-50 */
+            background-color: #f8fafc; /* slate-50 - Page background */
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
-        .container-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0; /* slate-200 */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
-        }
+        /* Removed .container-card styling for background and border */
         .section-title {
             color: #334155; /* slate-700 */
             border-bottom: 1px solid #e2e8f0;
@@ -216,16 +212,25 @@
         .collapsible-title.expanded::after {
             content: '[-]'; 
         }
+        .content-section { /* For sections that need a card-like appearance without the main container */
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+
     </style>
 </head>
 <body>
-    <div class="container mx-auto max-w-7xl container-card p-4 md:p-8 my-8">
+    <div class="container mx-auto px-4 md:px-8 py-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Branch & Bound</h1>
             <p class="text-md text-slate-500 mt-1">Visualization</p>
         </header>
 
-        <section id="input-section" class="mb-6">
+        <section id="input-section" class="content-section">
             <h2 class="section-title">Parameters</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -244,7 +249,7 @@
             <div id="input-error" class="mt-2 text-xs text-red-500"></div>
         </section>
 
-        <section id="controls-section" class="mb-6">
+        <section id="controls-section" class="content-section">
             <h2 class="section-title">Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
                 <button id="start-btn" class="btn btn-primary">Start</button>
@@ -264,7 +269,7 @@
         <div class="flex flex-col md:flex-row gap-6 mt-6">
             <!-- Left Column -->
             <div class="md:w-3/5 space-y-6">
-                <section>
+                <section class="content-section">
                     <h3 class="text-lg font-semibold mb-2 text-slate-700">Branch & Bound Tree</h3>
                     <div id="tree-visualization-area" class="tree-visualization">
                         <svg id="tree-svg-overlay" class="tree-svg-overlay"></svg>
@@ -273,13 +278,13 @@
                 </section>
 
                 <section class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
+                    <div class="content-section">
                         <h3 class="section-title mb-2">Current Best Solution</h3>
                         <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
                         <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
                         <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
                     </div>
-                    <div>
+                    <div class="content-section">
                         <h3 class="section-title mb-2">Log</h3>
                         <div id="log-area" class="log-area">
                             <p class="text-slate-400">Log messages will appear here...</p>
@@ -290,7 +295,7 @@
 
             <!-- Right Column -->
             <div class="md:w-2/5">
-                <section>
+                <section class="content-section">
                     <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
                     <div id="code-visualization-area-bnb" class="code-visualization expanded">
                         <div class="code-line" data-line-bnb="1"><span class="python-keyword">def</span> <span class="python-function">branch_and_bound</span>(<span class="python-parameters">items, capacity</span>):</div>
@@ -575,7 +580,7 @@
 
 
         async function branchAndBoundStep() {
-            if (!isSolving) return false; // Added check
+            if (!isSolving) return false; 
             if (solvingQueue.length === 0) {
                 addLog("Search queue is empty. Algorithm finished.");
                 highlightCodeLine_BnB(28); 
@@ -585,10 +590,10 @@
             }
 
             const currentNode = solvingQueue.pop(); 
-            const nodeFromMap = nodeMap.get(currentNode.id); // Use node from map
+            const nodeFromMap = nodeMap.get(currentNode.id); 
             if (!nodeFromMap) {
                  addLog(`Error: Node ${currentNode.id} not found in map during step. Skipping.`);
-                 return true; // Try next step
+                 return true; 
             }
             nodeFromMap.active = true; 
             
@@ -901,10 +906,10 @@
         });
         
         startBtn.addEventListener('click', () => {
-            if (isSolving) return; // Prevent re-start if already solving
+            if (isSolving) return; 
             if (!initializeAlgorithmState()) return; 
             
-            isSolving = true; // Set isSolving after successful initialization
+            isSolving = true; 
             isPaused = false;
             startAutoplayAnimation();
         });

@@ -10,17 +10,25 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* slate-50 - Page background */
+            background-color: #f8fafc; /* slate-50 */
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
         /* Removed .container-card styling for background and border */
+        .main-title {
+            font-size: 2.1rem; /* Approx 30% smaller than 3xl (30px) */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .main-title {
+                font-size: 2.5rem; /* Approx 30% smaller than 4xl (36px) */
+            }
+        }
         .section-title {
             color: #334155; /* slate-700 */
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            font-size: 1.125rem;
+            font-size: 0.9rem; /* Approx 30% smaller than 1.125rem (text-lg) */
             font-weight: 600;
         }
         .label-text {
@@ -82,14 +90,24 @@
         .log-area {
             background-color: #f1f5f9; 
             border: 1px solid #e2e8f0; 
-            padding: 0.75rem;
-            min-height: 100px;
+            /* padding is applied by .expanded or when not expanded */
+            min-height: 0; /* Allows it to fully collapse */
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 250px; 
-            overflow-y: auto;
+            max-height: 0; /* Collapsed by default */
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out, padding 0.5s ease-in-out;
+            margin-top: 0;
             border-radius: 0.375rem;
+        }
+        .log-area.expanded {
+            max-height: 250px; 
+            opacity: 1;
+            margin-top: 1rem; 
+            padding: 0.75rem; /* Padding only when expanded */
+            overflow-y: auto;
         }
         .log-entry {
             margin-bottom: 0.3em;
@@ -212,13 +230,13 @@
         .collapsible-title.expanded::after {
             content: '[-]'; 
         }
-        .content-section { /* For sections that need a card-like appearance without the main container */
+        .content-section { 
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
             box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-            border-radius: 0.75rem; /* rounded-xl */
-            padding: 1.5rem; /* p-6 */
-            margin-bottom: 1.5rem; /* mb-6 */
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
         }
 
     </style>
@@ -226,7 +244,7 @@
 <body>
     <div class="container mx-auto px-4 md:px-8 py-8">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Branch & Bound</h1>
+            <h1 class="main-title font-bold text-slate-700">0/1 Knapsack: Branch & Bound</h1>
             <p class="text-md text-slate-500 mt-1">Visualization</p>
         </header>
 
@@ -277,18 +295,17 @@
                     </div>
                 </section>
 
-                <section class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div class="content-section">
-                        <h3 class="section-title mb-2">Current Best Solution</h3>
-                        <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
-                        <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
-                        <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="section-title mb-2">Log</h3>
-                        <div id="log-area" class="log-area">
-                            <p class="text-slate-400">Log messages will appear here...</p>
-                        </div>
+                <section class="content-section">
+                    <h3 class="section-title mb-2">Current Best Solution</h3>
+                    <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
+                    <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
+                    <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+                </section>
+
+                <section id="system-log-section" class="content-section">
+                     <h3 id="log-title" class="section-title collapsible-title">Log</h3>
+                    <div id="log-area" class="log-area">
+                        <!-- Log entries will be appended here -->
                     </div>
                 </section>
             </div>
@@ -352,8 +369,9 @@
         const treeSvgOverlay = document.getElementById('tree-svg-overlay');
         const treePlaceholder = document.getElementById('tree-placeholder');
         const codeVisualizationAreaBnB = document.getElementById('code-visualization-area-bnb'); 
-        const codeTitle = document.getElementById('code-title');
+        const codeTitle = document.getElementById('code-title'); // For code collapse
         const logArea = document.getElementById('log-area');
+        const logTitle = document.getElementById('log-title'); // For log collapse
         
         const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
         const bestWeightOutput = document.getElementById('best-weight-output').querySelector('span');
@@ -737,7 +755,8 @@
         function initializeAlgorithmState() {
             if (!validateAndParseInputs()) return false;
 
-            // isSolving and isPaused will be set by the calling function (startBtn, stepBtn etc.)
+            isSolving = true;
+            isPaused = false;
             logArea.innerHTML = '';
             treeVisualizationArea.innerHTML = ''; 
             if(treePlaceholder) treePlaceholder.style.display = 'block';
@@ -777,7 +796,7 @@
                 if (solvingQueue.length === 0 && isSolving) {
                     finalizeSolution(); 
                 }
-                if (isPaused && isSolving) {
+                if (isPaused && isSolving) { 
                     startBtn.disabled = true;
                     stepBtn.disabled = solvingQueue.length === 0;
                     autoBtn.disabled = solvingQueue.length === 0;
@@ -960,6 +979,12 @@
             codeTitle.addEventListener('click', () => { 
                 codeVisualizationAreaBnB.classList.toggle('expanded');
                 codeTitle.classList.toggle('expanded');
+            });
+        }
+        if(logTitle) { // Check if logTitle element exists
+            logTitle.addEventListener('click', () => { 
+                logArea.classList.toggle('expanded');
+                logTitle.classList.toggle('expanded');
             });
         }
         

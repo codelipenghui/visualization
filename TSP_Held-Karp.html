@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP - Held-Karp Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; 
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; 
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; 
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; 
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; 
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; 
+            border-color: #334155;
+        }
+
+        #tsp-canvas {
+            border: 1px solid #e2e8f0; 
+            cursor: crosshair;
+            background-color: #ffffff; 
+            border-radius: 0.375rem; 
+        }
+        .dp-table-container { 
+            max-height: 400px; 
+            overflow-y: auto; 
+            overflow-x: auto; 
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+        }
+        .dp-table td, .dp-table th {
+            border: 1px solid #e2e8f0;
+            padding: 0.3rem 0.4rem; 
+            text-align: center;
+            min-width: 40px; 
+            font-size: 0.7rem; 
+            white-space: nowrap;
+        }
+        .dp-table th {
+            color: #475569;
+            background-color: #f1f5f9; 
+            font-weight: 500;
+            position: sticky; 
+            top: 0;
+            z-index: 10;
+        }
+        .dp-table thead th:first-child { 
+            left: 0;
+            z-index: 20;
+        }
+        .dp-table tbody th { 
+            position: sticky;
+            left: 0;
+            background-color: #f1f5f9; 
+            z-index: 5;
+        }
+
+        .highlight-current { 
+            background-color: #cbd5e1 !important; 
+            color: #1e293b !important; 
+            font-weight: 600;
+        }
+        .highlight-dependency { 
+            background-color: #e0f2fe; 
+            outline: 1px dotted #7dd3fc; 
+        }
+        .highlight-chosen-dependency { 
+            background-color: #d1fae5; 
+            outline: 1px solid #6ee7b7; 
+        }
+        .highlight-final-path { 
+            stroke: #1e293b; 
+            stroke-width: 2.5px !important;
+        }
+
+        .log-area {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 0.75rem;
+            min-height: 80px;
+            font-size: 0.7rem; 
+            white-space: pre-wrap;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; 
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { 
+             accent-color: #64748b; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-5xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">TSP: Held-Karp Algorithm</h1>
+            <p class="text-md text-slate-500 mt-1">Dynamic Programming Visualization</p>
+        </header>
+
+        <!-- Setup Section -->
+        <section id="setup-section" class="mb-6">
+            <h2 class="section-title">City Setup</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="num-cities" class="block label-text mb-1">Number of Cities (Max 5 for Vis):</label>
+                    <input type="number" id="num-cities" value="4" min="2" max="5" class="input-field block w-full">
+                </div>
+                <div class="flex items-end">
+                    <button id="generate-cities-btn" class="btn btn-secondary w-full">Generate Random Cities</button>
+                </div>
+            </div>
+             <p class="text-xs text-slate-500">Alternatively, click on the canvas below to add cities (up to max).</p>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Solver Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-tsp-btn" class="btn btn-primary">Start</button>
+                <button id="step-tsp-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-tsp-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-tsp-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-tsp-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
+                    <input type="range" id="tsp-speed-slider" min="50" max="1500" value="500" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="tsp-speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">500ms</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Note: "Start" runs the full animation. "Pause" stops the current run. "Step" or "Auto" after a pause will restart.</p>
+        </section>
+
+        <!-- Visualization Canvas -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
+            <canvas id="tsp-canvas" width="700" height="350"></canvas>
+        </section>
+        
+        <!-- DP Table Section -->
+        <section id="dp-table-section" class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">DP Table (C[Subset, End_City])</h3>
+            <div id="dp-table-container-held-karp" class="dp-table-container">
+                <p class="text-center text-slate-400 py-4 text-sm">DP Table for Held-Karp will appear here.</p>
+            </div>
+        </section>
+
+        <!-- Log and Results Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="tsp-log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Results</h3>
+                <p id="tsp-path-output" class="text-slate-700 text-sm">Optimal Path: <span class="font-semibold">-</span></p>
+                <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; TSP Held-Karp Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tsp-canvas');
+        const ctx = canvas.getContext('2d');
+        const numCitiesInput = document.getElementById('num-cities');
+        const generateCitiesBtn = document.getElementById('generate-cities-btn');
+        
+        const startTspBtn = document.getElementById('start-tsp-btn');
+        const stepTspBtn = document.getElementById('step-tsp-btn');
+        const autoTspBtn = document.getElementById('auto-tsp-btn');
+        const pauseTspBtn = document.getElementById('pause-tsp-btn');
+        const resetTspBtn = document.getElementById('reset-tsp-btn');
+
+        const speedSlider = document.getElementById('tsp-speed-slider');
+        const speedValueSpan = document.getElementById('tsp-speed-value');
+        const logArea = document.getElementById('tsp-log-area');
+        const pathOutput = document.getElementById('tsp-path-output').querySelector('span');
+        const distanceOutput = document.getElementById('tsp-distance-output').querySelector('span');
+        const dpTableContainerHeldKarp = document.getElementById('dp-table-container-held-karp');
+
+        let cities = []; 
+        let cityIdCounter = 0;
+        let N = 0; 
+        let distMatrix = [];
+        let dp = {}; 
+        let dpTableElements = {}; 
+
+        let isSolvingTSP = false;
+        let animationSpeed = 500;
+        let currentSolveController = null; 
+        let isPausedByUser = false; // To track if user explicitly paused
+
+        const CITY_RADIUS = 7;
+        const GRID_SPACING = 50;
+        const GRID_COLOR = "#e2e8f0"; 
+        const CITY_COLOR_DEFAULT = "#64748b"; 
+        const CITY_TEXT_COLOR = "#1e293b"; 
+        const CITY_COLOR_START_END = "#cbd5e1";     
+        const CITY_BORDER_START_END = "#475569";  
+        
+        const PATH_COLOR_TOUR = "#334155";   
+        const PATH_COLOR_CALC_EDGE = "#60a5fa"; 
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = GRID_COLOR; ctx.lineWidth = 0.5;
+            for (let x = GRID_SPACING; x < canvas.width; x += GRID_SPACING) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+            for (let y = GRID_SPACING; y < canvas.height; y += GRID_SPACING) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+        }
+
+        function drawCityCircles() {
+            cities.forEach((city, index) => {
+                ctx.beginPath();
+                ctx.arc(city.x, city.y, CITY_RADIUS, 0, Math.PI * 2);
+                let fillColor = CITY_COLOR_DEFAULT;
+                let strokeStyle = null;
+
+                if (index === 0) { 
+                    fillColor = CITY_COLOR_START_END;
+                    strokeStyle = CITY_BORDER_START_END;
+                }
+                
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                if (strokeStyle) {
+                    ctx.strokeStyle = strokeStyle;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+                ctx.closePath();
+            });
+        }
+        
+        function drawCityLabels() {
+            cities.forEach((city) => {
+                ctx.fillStyle = CITY_TEXT_COLOR; 
+                ctx.font = "bold 10px Inter"; 
+                ctx.textAlign = "center";
+                ctx.fillText(city.id, city.x, city.y + CITY_RADIUS + 9); 
+            });
+        }
+
+        function drawPath(pathIndices, color, lineWidth) {
+            if (!pathIndices || pathIndices.length < 2 || !cities[pathIndices[0]]) return;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(cities[pathIndices[0]].x, cities[pathIndices[0]].y);
+            for (let i = 1; i < pathIndices.length; i++) {
+                 if (cities[pathIndices[i]]) {
+                    ctx.lineTo(cities[pathIndices[i]].x, cities[pathIndices[i]].y);
+                 }
+            }
+            ctx.stroke();
+        }
+        
+        function redrawCanvas(currentPath = null, currentCalcEdge = null, finalOptimalPath = null) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawCityCircles(); 
+
+            if (finalOptimalPath && finalOptimalPath.length > 0) {
+                drawPath(finalOptimalPath, PATH_COLOR_TOUR, 2.5); 
+                if (finalOptimalPath.length === N && cities[finalOptimalPath[0]]) {
+                    drawPath([finalOptimalPath[finalOptimalPath.length - 1], finalOptimalPath[0]], PATH_COLOR_TOUR, 2.5);
+                }
+            } else if (currentPath && currentPath.length > 0) { 
+                drawPath(currentPath, PATH_COLOR_DEFAULT, 1.5);
+            }
+            
+            if (currentCalcEdge && cities[currentCalcEdge.from] && cities[currentCalcEdge.to]) { 
+                 drawPath([currentCalcEdge.from, currentCalcEdge.to], currentCalcEdge.color, 2);
+            }
+            
+            drawCityLabels(); 
+        }
+
+
+        canvas.addEventListener('click', (event) => {
+            if (isSolvingTSP || cities.length >= parseInt(numCitiesInput.max)) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            cities.push({ x, y, id: cityIdCounter }); 
+            cityIdCounter++;
+            N = cities.length;
+            redrawCanvas();
+            addLog(`Added City ${cityIdCounter-1} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+        });
+
+        generateCitiesBtn.addEventListener('click', () => {
+            if (isSolvingTSP) return;
+            cities = [];
+            cityIdCounter = 0;
+            N = Math.min(parseInt(numCitiesInput.value), parseInt(numCitiesInput.max)); 
+            numCitiesInput.value = N; 
+
+            for (let i = 0; i < N; i++) {
+                cities.push({
+                    x: Math.random() * (canvas.width - 2 * (CITY_RADIUS + 10)) + (CITY_RADIUS + 10),
+                    y: Math.random() * (canvas.height - 2 * (CITY_RADIUS + 10)) + (CITY_RADIUS + 10),
+                    id: cityIdCounter++
+                });
+            }
+            redrawCanvas();
+            addLog(`Generated ${N} random cities.`);
+            resetSolutionUI();
+        });
+        
+        resetTspBtn.addEventListener('click', resetSolutionFull);
+
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        function resetSolutionUI(){
+            pathOutput.textContent = "-";
+            distanceOutput.textContent = "-";
+            dp = {};
+            dpTableElements = {};
+            dpTableContainerHeldKarp.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">DP Table for Held-Karp will appear here.</p>';
+            redrawCanvas(); 
+        }
+
+        function resetSolutionFull() {
+            if (currentSolveController) currentSolveController.abort();
+            isSolvingTSP = false;
+            isPausedByUser = false;
+            
+            cities = []; 
+            cityIdCounter = 0;
+            N = 0;
+            resetSolutionUI(); 
+
+            logArea.innerHTML = ''; 
+            addLog("System reset. Add or generate cities.");
+
+            startTspBtn.disabled = false;
+            generateCitiesBtn.disabled = false;
+            stepTspBtn.disabled = true;
+            autoTspBtn.disabled = true;
+            pauseTspBtn.disabled = true;
+        }
+        
+        function calculateDistanceMatrix() {
+            distMatrix = Array(N).fill(null).map(() => Array(N).fill(0));
+            for (let i = 0; i < N; i++) {
+                for (let j = i; j < N; j++) {
+                    if (i === j) continue;
+                    const d = Math.sqrt(Math.pow(cities[i].x - cities[j].x, 2) + Math.pow(cities[i].y - cities[j].y, 2));
+                    distMatrix[i][j] = d;
+                    distMatrix[j][i] = d;
+                }
+            }
+        }
+
+        function getSubsetCities(mask) {
+            const subset = [];
+            for (let i = 0; i < N; i++) {
+                if ((mask >> i) & 1) subset.push(i);
+            }
+            return subset;
+        }
+        
+        function initializeHeldKarpDPTableHTML() {
+            dpTableContainerHeldKarp.innerHTML = '';
+            const table = document.createElement('table');
+            table.className = 'dp-table w-full border-collapse';
+            const header = table.createTHead().insertRow();
+            const thCorner = document.createElement('th');
+            thCorner.innerHTML = 'Subset {Cities}<span class="text-xs text-slate-400">\\EndAt</span>';
+            header.appendChild(thCorner);
+
+            for (let j = 0; j < N; j++) { 
+                const th = document.createElement('th');
+                th.textContent = `City ${j}`;
+                header.appendChild(th);
+            }
+            
+            const tbody = table.createTBody();
+            dpTableElements = {}; 
+
+            for (let mask = 1; mask < (1 << N); mask++) {
+                if (!((mask >> 0) & 1)) continue; 
+
+                const subset = getSubsetCities(mask);
+                if (subset.length === 0) continue; 
+
+                const row = tbody.insertRow();
+                const thSubset = document.createElement('th');
+                thSubset.textContent = `{${subset.join(',')}} (m:${mask.toString(2).padStart(N, '0')})`;
+                row.appendChild(thSubset);
+
+                dpTableElements[mask] = {};
+                for (let j = 0; j < N; j++) {
+                    const cell = row.insertCell();
+                    cell.textContent = '∞';
+                    if (!((mask >> j) & 1) || (mask === (1 << 0) && j !== 0) ) { 
+                        cell.textContent = '-';
+                        cell.classList.add('text-slate-300');
+                    }
+                    dpTableElements[mask][j] = cell;
+                }
+            }
+            dpTableContainerHeldKarp.appendChild(table);
+        }
+
+        async function solveHeldKarp(signal) {
+            calculateDistanceMatrix();
+            initializeHeldKarpDPTableHTML();
+            dp = {}; 
+
+            const startNodeMask = 1 << 0; 
+            dp[startNodeMask] = {};
+            dp[startNodeMask][0] = 0;
+            if (dpTableElements[startNodeMask] && dpTableElements[startNodeMask][0]) {
+                 dpTableElements[startNodeMask][0].textContent = '0';
+                 dpTableElements[startNodeMask][0].classList.add('highlight-calculated', 'text-item-included');
+            }
+            addLog(`Base case: dp[{0} (mask ${startNodeMask.toString(2).padStart(N,'0')})][0] = 0`);
+            await sleep(animationSpeed);
+            if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
+
+
+            for (let s = 2; s <= N; s++) {
+                addLog(`\nProcessing subsets of size ${s}:`);
+                for (let mask = 1; mask < (1 << N); mask++) {
+                    if (!((mask >> 0) & 1)) continue; 
+                    
+                    const subset = getSubsetCities(mask);
+                    if (subset.length !== s) continue;
+
+                    if (!dp[mask]) dp[mask] = {};
+
+                    for (const j of subset) { 
+                        if (j === 0 && s > 1) continue; 
+                        if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
+
+
+                        if (dpTableElements[mask] && dpTableElements[mask][j]) {
+                            dpTableElements[mask][j].classList.add('highlight-current');
+                        }
+                        addLog(`  Calculating dp[{${subset.join(',')}}][${j}]:`);
+                        
+                        let minCostForCurrentCell = Infinity;
+                        let bestPrevK = -1;
+
+                        const prevMask = mask ^ (1 << j); 
+                        if (!((prevMask >> 0) & 1) && prevMask !== 0 && N > 1) continue; 
+                        
+                        const prevSubset = getSubsetCities(prevMask);
+
+                        for (const k of prevSubset) { 
+                            if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
+
+                            if (dp[prevMask] && dp[prevMask][k] !== undefined && dp[prevMask][k] !== Infinity) {
+                                const cost = dp[prevMask][k] + distMatrix[k][j];
+                                addLog(`    Trying path ...${k} -> ${j}. Cost = (dp[{${prevSubset.join(',')}}][${k}]=${dp[prevMask][k].toFixed(1)}) + dist(${k},${j}=${distMatrix[k][j].toFixed(1)}) = ${cost.toFixed(1)}`);
+                                
+                                if (dpTableElements[prevMask] && dpTableElements[prevMask][k]) {
+                                    dpTableElements[prevMask][k].classList.add('highlight-dependency');
+                                }
+                                redrawCanvas(null, {from: k, to: j, color: PATH_COLOR_CALC_EDGE});
+
+                                if (cost < minCostForCurrentCell) {
+                                    minCostForCurrentCell = cost;
+                                    bestPrevK = k;
+                                }
+                                await sleep(animationSpeed);
+                                if (dpTableElements[prevMask] && dpTableElements[prevMask][k]) {
+                                    dpTableElements[prevMask][k].classList.remove('highlight-dependency');
+                                }
+                            }
+                        }
+                        
+                        dp[mask][j] = minCostForCurrentCell;
+                        if (dpTableElements[mask] && dpTableElements[mask][j]) {
+                            dpTableElements[mask][j].textContent = dp[mask][j] === Infinity ? '∞' : dp[mask][j].toFixed(1);
+                            dpTableElements[mask][j].classList.remove('highlight-current');
+                            dpTableElements[mask][j].classList.add('highlight-calculated', dp[mask][j] === Infinity ? 'text-item-not-included' : 'text-item-included');
+                            if (bestPrevK !== -1 && dpTableElements[prevMask] && dpTableElements[prevMask][bestPrevK]) {
+                                 dpTableElements[prevMask][bestPrevK].classList.add('highlight-chosen-dependency');
+                            }
+                        }
+                        addLog(`  -> dp[{${subset.join(',')}}][${j}] = ${dp[mask][j] === Infinity ? '∞' : dp[mask][j].toFixed(1)} (via city ${bestPrevK})`);
+                        await sleep(animationSpeed);
+                        clearHighlights(); 
+                        redrawCanvas(); 
+                    }
+                }
+            }
+
+            if (signal.aborted || isPausedByUser) { addLog("Solving stopped before final calculation."); return { cost: Infinity, path: [] }; }
+
+
+            const finalMask = (1 << N) - 1; 
+            let minTotalCost = Infinity;
+            let lastCityBeforeReturning = -1;
+
+            addLog("\nFinal step: Calculating return to start city 0:");
+            if (!dp[finalMask] && N > 1) { 
+                 addLog("Error: DP state for all cities visited is missing.");
+                 return { cost: Infinity, path: [] };
+            }
+            if (N === 1) { 
+                 return { cost: 0, path: [0] };
+            }
+
+
+            for (let j = 1; j < N; j++) { 
+                 if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
+
+                if (dp[finalMask] && dp[finalMask][j] !== undefined && dp[finalMask][j] !== Infinity) {
+                    const cost = dp[finalMask][j] + distMatrix[j][0];
+                    addLog(`  Path ending at ${j}, then to 0: (dp[all][${j}]=${dp[finalMask][j].toFixed(1)}) + dist(${j},0=${distMatrix[j][0].toFixed(1)}) = ${cost.toFixed(1)}`);
+                    if (dpTableElements[finalMask] && dpTableElements[finalMask][j]) {
+                         dpTableElements[finalMask][j].classList.add('highlight-dependency');
+                    }
+                    redrawCanvas(null, {from: j, to: 0, color: PATH_COLOR_CALC_EDGE});
+                    await sleep(animationSpeed);
+
+                    if (cost < minTotalCost) {
+                        minTotalCost = cost;
+                        lastCityBeforeReturning = j;
+                    }
+                     if (dpTableElements[finalMask] && dpTableElements[finalMask][j]) {
+                         dpTableElements[finalMask][j].classList.remove('highlight-dependency');
+                    }
+                }
+            }
+             redrawCanvas(); 
+
+
+            if (lastCityBeforeReturning !== -1 && dpTableElements[finalMask] && dpTableElements[finalMask][lastCityBeforeReturning]) {
+                dpTableElements[finalMask][lastCityBeforeReturning].classList.add('highlight-chosen-dependency');
+            }
+            addLog(`-> Minimum total tour cost: ${minTotalCost === Infinity ? 'N/A' : minTotalCost.toFixed(1)} (last city before returning to 0 is ${lastCityBeforeReturning})`);
+            
+            if (signal.aborted || isPausedByUser) { addLog("Solving stopped before path reconstruction."); return { cost: minTotalCost, path: [] }; }
+
+
+            let currentPath = [];
+            let currentMask = finalMask;
+            let currentLastCity = lastCityBeforeReturning;
+
+            if (minTotalCost === Infinity && N > 1) {
+                 return { cost: Infinity, path: [] };
+            }
+            if (N===1) return { cost: 0, path: [0] }; 
+
+
+            while (currentLastCity !== undefined && currentLastCity !== -1 && currentMask !== 0) {
+                currentPath.unshift(currentLastCity);
+                if (currentMask === (1 << currentLastCity) && currentLastCity === 0) break; 
+
+                const prevMask = currentMask ^ (1 << currentLastCity);
+                let prevCity = -1;
+                
+                if (prevMask === 0) { 
+                    prevCity = 0; 
+                } else {
+                    for (let k = 0; k < N; k++) { 
+                        if (!((prevMask >> k) & 1)) continue; 
+                        if (dp[prevMask] && dp[prevMask][k] !== undefined && dp[prevMask][k] !== Infinity) {
+                             if (Math.abs((dp[prevMask][k] + distMatrix[k][currentLastCity]) - dp[currentMask][currentLastCity]) < 1e-5) { 
+                                prevCity = k;
+                                break; 
+                            }
+                        }
+                    }
+                }
+
+                if (prevCity === -1 && prevMask !==0 ) { 
+                     addLog(`Error reconstructing path at mask ${currentMask.toString(2)}, city ${currentLastCity}. prevMask: ${prevMask.toString(2)}`);
+                     break; 
+                }
+
+                currentMask = prevMask;
+                currentLastCity = prevCity;
+
+                 if (currentPath.length > N + 2) { 
+                    addLog("Error: Path reconstruction possibly stuck in a loop.");
+                    currentPath = []; 
+                    break;
+                }
+            }
+             if (currentPath[0] !== 0 && N > 1) { 
+                currentPath.unshift(0);
+            } else if (N===1 && currentPath.length === 0) {
+                currentPath.push(0);
+            }
+
+            return { cost: minTotalCost, path: currentPath };
+        }
+
+        async function executeSolvingProcess() {
+            if (isSolvingTSP) return; 
+            if (cities.length < 1) {
+                 addLog("Add at least 1 city (max " + numCitiesInput.max + ") to solve with Held-Karp.");
+                return;
+            }
+             if (cities.length > parseInt(numCitiesInput.max)) {
+                addLog(`Held-Karp visualization is limited to ${numCitiesInput.max} cities. Please reduce number of cities.`);
+                return;
+            }
+            
+            isSolvingTSP = true;
+            isPausedByUser = false; // Reset pause flag for a new run
+            if (currentSolveController) currentSolveController.abort(); // Abort previous if any
+            currentSolveController = new AbortController();
+            const signal = currentSolveController.signal;
+
+            // Update button states for solving
+            startTspBtn.disabled = true;
+            stepTspBtn.disabled = true; // True step-by-step not implemented for Held-Karp
+            autoTspBtn.disabled = true;  // Auto is essentially "Start"
+            pauseTspBtn.disabled = false; // Can pause (stop)
+            resetTspBtn.disabled = false; 
+            generateCitiesBtn.disabled = true;
+
+            logArea.innerHTML = ''; 
+            addLog(`Starting Held-Karp for ${N} cities...`);
+            pathOutput.textContent = "-";
+            distanceOutput.textContent = "-";
+
+
+            try {
+                const result = await solveHeldKarp(signal);
+                if (signal.aborted) { // Aborted by reset or new start
+                    addLog("Held-Karp solving aborted.");
+                } else if (isPausedByUser) { // Stopped by user pause
+                     addLog("Held-Karp solving stopped by user via Pause.");
+                } else if (result.cost !== Infinity) {
+                    addLog(`Held-Karp finished. Optimal tour cost: ${result.cost.toFixed(2)}`);
+                    const displayPath = result.path.map(idx => cities[idx] ? cities[idx].id : '?');
+                    pathOutput.textContent = displayPath.join(' -> ') + (displayPath.length > 0 && displayPath[0] !== undefined ? ` -> ${displayPath[0]}` : "");
+                    distanceOutput.textContent = result.cost.toFixed(2);
+                    redrawCanvas(null, null, result.path); 
+                } else {
+                    addLog("No feasible solution found by Held-Karp (or N=0).");
+                     pathOutput.textContent = "N/A";
+                    distanceOutput.textContent = "N/A";
+                     redrawCanvas(); 
+                }
+            } catch (error) {
+                 if (error.name === 'AbortError') { // Should be caught by signal.aborted
+                    addLog("Held-Karp solving process was aborted.");
+                } else {
+                    addLog("Error during Held-Karp: " + error.message);
+                    console.error(error);
+                }
+            } finally {
+                isSolvingTSP = false; // Mark solving as complete or stopped
+                // Reset button states based on whether it was a full completion or a pause/abort
+                if (isPausedByUser || signal.aborted) {
+                    startTspBtn.disabled = false;
+                    stepTspBtn.disabled = false; // Allow re-triggering
+                    autoTspBtn.disabled = false; // Allow re-triggering
+                    pauseTspBtn.disabled = true;
+                } else { // Natural completion
+                    startTspBtn.disabled = false;
+                    stepTspBtn.disabled = true;
+                    autoTspBtn.disabled = true;
+                    pauseTspBtn.disabled = true;
+                }
+                generateCitiesBtn.disabled = false;
+            }
+        }
+        
+        startTspBtn.addEventListener('click', executeSolvingProcess);
+        stepTspBtn.addEventListener('click', executeSolvingProcess); // Step also restarts
+        autoTspBtn.addEventListener('click', executeSolvingProcess);   // Auto also restarts
+
+        pauseTspBtn.addEventListener('click', () => {
+            if (isSolvingTSP && !isPausedByUser) {
+                isPausedByUser = true; // Signal the loop to stop
+                if (currentSolveController) currentSolveController.abort(); // Also send abort, loop checks both
+                addLog("Pause requested. Current process will stop.");
+                // Button states will be updated in the `finally` block of `executeSolvingProcess`
+            }
+        });
+        
+        function clearHighlights() { 
+            for (const maskKey in dpTableElements) {
+                for (const endCityKey in dpTableElements[maskKey]) {
+                    const cell = dpTableElements[maskKey][endCityKey];
+                    if (cell) { // Check if cell exists
+                        cell.classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency');
+                    }
+                }
+            }
+        }
+
+        // Initial setup
+        speedValueSpan.textContent = `${animationSpeed}ms`;
+        generateCitiesBtn.click(); 
+        addLog("Canvas ready. Add/Generate cities (max " + numCitiesInput.max + " for Held-Karp).");
+
+    </script>
+</body>
+</html>

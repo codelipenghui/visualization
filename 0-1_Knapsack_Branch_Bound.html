@@ -397,7 +397,8 @@
             const line = codeVisualizationAreaBnB.querySelector(`.code-line[data-line-bnb="${lineNumber}"]`);
             if (line) {
                 line.classList.add(`highlight-code-${type}`);
-                line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                // No auto-scroll for code area as per request
+                // line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
             }
         }
 

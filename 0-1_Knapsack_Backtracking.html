@@ -6,6 +6,7 @@
     <title>0/1 Knapsack - Backtracking Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -107,9 +108,9 @@
              accent-color: #64748b; 
         }
         .path-visualization {
-            min-height: 100px;
+            min-height: 60px; 
             border: 1px solid #e2e8f0;
-            padding: 1rem;
+            padding: 0.75rem; 
             border-radius: 0.375rem;
             background-color: #ffffff;
             font-size: 0.75rem;
@@ -117,14 +118,56 @@
         .path-node {
             display: inline-block;
             padding: 0.25rem 0.5rem;
-            margin: 0.25rem;
+            margin: 0.15rem; 
             border-radius: 0.25rem;
             border: 1px solid #cbd5e1;
+            font-size: 0.7rem; 
         }
-        .path-node.included { background-color: #d1fae5; border-color: #6ee7b7;} /* emerald */
-        .path-node.excluded { background-color: #fee2e2; border-color: #fca5a5;} /* red */
-        .path-node.current-decision { background-color: #e0f2fe; border-color: #7dd3fc;} /* sky */
+        .path-node.included { background-color: #d1fae5; border-color: #6ee7b7;} 
+        .path-node.excluded { background-color: #fee2e2; border-color: #fca5a5;} 
+        .path-node.current-decision { background-color: #e0f2fe; border-color: #7dd3fc;} 
         .path-node.backtracked { text-decoration: line-through; color: #9ca3af; }
+
+        .code-visualization {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.75rem; /* Increased base code font size slightly */
+            line-height: 1.6; /* Increased line height for readability */
+            max-height: 320px; /* Slightly more height */
+            overflow-y: auto;
+        }
+        .code-line {
+            padding: 0.15rem 0.5rem; /* Adjusted padding */
+            border-radius: 0.125rem;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre; 
+        }
+        /* Syntax Highlighting Classes */
+        .python-keyword { color: #0ea5e9; /* sky-500 */ }
+        .python-function { color: #2563eb; /* blue-600 */ }
+        .python-parameters { color: #475569; /* slate-600 */ }
+        .python-comment { color: #64748b; /* slate-500 */ font-style: italic; }
+        .python-variable { color: #1e293b; /* slate-800 */ }
+        .python-operator { color: #ec4899; /* pink-500 */ }
+        .python-number { color: #f59e0b; /* amber-500 */ }
+        .python-string { color: #10b981; /* emerald-500 */ }
+        
+        /* Execution Highlighting Classes (applied to .code-line div) */
+        .highlight-code-active {
+            background-color: #e2e8f0; /* slate-200 */
+        }
+         .highlight-code-branch {
+            background-color: #ccfbf1; /* teal-100 */
+        }
+        .highlight-code-prune {
+            background-color: #fee2e2; /* red-100 */
+        }
+        .highlight-code-solution {
+            background-color: #dcfce7; /* green-100 */
+        }
     </style>
 </head>
 <body>
@@ -179,6 +222,31 @@
             </div>
         </section>
 
+        <!-- Python Code Visualization -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">Python Code (Conceptual)</h3>
+            <div id="code-visualization-area" class="code-visualization">
+                <div class="code-line" data-line="1"><span class="python-keyword">def</span> <span class="python-function">backtrack</span>(<span class="python-parameters">index, current_weight, current_value</span>):</div>
+                <div class="code-line" data-line="2">  <span class="python-comment"># Base Case: All items considered</span></div>
+                <div class="code-line" data-line="3">  <span class="python-keyword">if</span> <span class="python-variable">index</span> <span class="python-operator">==</span> <span class="python-variable">N_items</span>:</div>
+                <div class="code-line" data-line="4">    <span class="python-keyword">if</span> <span class="python-variable">current_value</span> <span class="python-operator">></span> <span class="python-variable">globalBest.value</span>:</div>
+                <div class="code-line" data-line="5">      <span class="python-variable">globalBest.value</span> <span class="python-operator">=</span> <span class="python-variable">current_value</span></div>
+                <div class="code-line" data-line="6">      <span class="python-variable">globalBest.selection</span> <span class="python-operator">=</span> <span class="python-comment"># current selection from path_taken</span></div>
+                <div class="code-line" data-line="7">    <span class="python-keyword">return</span></div>
+                <div class="code-line" data-line="8">  </div>
+                <div class="code-line" data-line="9">  <span class="python-comment"># Option 1: Exclude current item</span></div>
+                <div class="code-line" data-line="10"> <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span>, <span class="python-variable">current_value</span>)</div>
+                <div class="code-line" data-line="11"> </div>
+                <div class="code-line" data-line="12"> <span class="python-comment"># Option 2: Include current item (if it fits)</span></div>
+                <div class="code-line" data-line="13"> <span class="python-variable">item</span> <span class="python-operator">=</span> <span class="python-variable">items</span>[<span class="python-variable">index</span>]</div>
+                <div class="code-line" data-line="14"> <span class="python-keyword">if</span> <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span> <span class="python-operator">&lt;=</span> <span class="python-variable">W_capacity</span>:</div>
+                <div class="code-line" data-line="15">   <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span>, <span class="python-variable">current_value</span> <span class="python-operator">+</span> <span class="python-variable">item.value</span>)</div>
+                <div class="code-line" data-line="16"> <span class="python-keyword">else</span>:</div>
+                <div class="code-line" data-line="17">   <span class="python-comment"># Pruned: Item does not fit</span></div>
+                <div class="code-line" data-line="18">   <span class="python-keyword">pass</span></div>
+            </div>
+        </section>
+
         <!-- Current Best Solution and Log -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -212,6 +280,7 @@
         const speedSlider = document.getElementById('speed-slider');
         const speedValueSpan = document.getElementById('speed-value');
         const pathVisualizationArea = document.getElementById('path-visualization-area');
+        const codeVisualizationArea = document.getElementById('code-visualization-area');
         const logArea = document.getElementById('log-area');
         
         const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
@@ -219,7 +288,7 @@
         const bestItemsOutput = document.getElementById('best-items-output').querySelector('span');
         const inputError = document.getElementById('input-error');
 
-        let items = []; // { id, weight, value }
+        let items = []; 
         let W_capacity = 0;
         let N_items = 0;
         
@@ -228,9 +297,9 @@
         let isPaused = false;
         let autoplayIntervalId = null;
         
-        let globalBest = { value: 0, weight: 0, selection: [] }; // Stores original_indices
-        let currentPath = []; // Stores { item_index (original_index), taken (boolean), backtracked (boolean) }
-        let explorationStack = []; // { index (current item index in items array to decide), current_weight, current_value, path_taken_so_far }
+        let globalBest = { value: 0, weight: 0, selection: [] }; 
+        let currentPath = []; 
+        let explorationStack = []; 
 
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
@@ -244,6 +313,20 @@
             logArea.appendChild(entry);
             logArea.scrollTop = logArea.scrollHeight;
         }
+        
+        function clearCodeHighlights() {
+            const lines = codeVisualizationArea.querySelectorAll('.code-line');
+            lines.forEach(line => line.classList.remove('highlight-code-active', 'highlight-code-branch', 'highlight-code-prune', 'highlight-code-solution'));
+        }
+
+        function highlightCodeLine(lineNumber, type = 'active') {
+            clearCodeHighlights();
+            const line = codeVisualizationArea.querySelector(`.code-line[data-line="${lineNumber}"]`);
+            if (line) {
+                line.classList.add(`highlight-code-${type}`);
+            }
+        }
+
 
         function validateAndParseInputs() {
             const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
@@ -298,14 +381,14 @@
         
         function renderCurrentPath() {
             pathVisualizationArea.innerHTML = '';
-            if (explorationStack.length === 0 && currentPath.length === 0 && !isSolving) { // Show placeholder only if not solving
+            if (explorationStack.length === 0 && currentPath.length === 0 && !isSolving) { 
                  pathVisualizationArea.innerHTML = '<p class="text-slate-400 text-sm">Exploration path will be shown here.</p>';
                  return;
             }
             
             currentPath.forEach(decisionNode => {
-                const item = items[decisionNode.item_index]; // item_index is original_index
-                if (!item) return; // Should not happen
+                const item = items[decisionNode.item_index]; 
+                if (!item) return; 
                 const nodeEl = document.createElement('span');
                 nodeEl.className = 'path-node';
                 let decisionText = `I${item.id}: `;
@@ -321,7 +404,7 @@
                 }
                 nodeEl.textContent = decisionText;
                 pathVisualizationArea.appendChild(nodeEl);
-                 if (pathVisualizationArea.childNodes.length > 0) { // Add arrow if not the first element
+                 if (pathVisualizationArea.childNodes.length > 0) { 
                     pathVisualizationArea.appendChild(document.createTextNode(' → '));
                  }
             });
@@ -334,7 +417,6 @@
                     nodeEl.className = 'path-node current-decision';
                     nodeEl.textContent = `Deciding I${item.id}...`;
                     if (pathVisualizationArea.childNodes.length > 0 && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
-                         // No extra arrow if last was already an arrow
                     } else if (pathVisualizationArea.childNodes.length > 0) {
                         pathVisualizationArea.appendChild(document.createTextNode(' → '));
                     }
@@ -342,7 +424,7 @@
                 }
             } else if (isSolving && N_items > 0 && currentPath.length === N_items){ 
                  if (pathVisualizationArea.lastChild && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
-                    pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); // Remove trailing arrow
+                    pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); 
                  }
                  const nodeEl = document.createElement('span');
                  nodeEl.className = 'path-node';
@@ -350,7 +432,7 @@
                  pathVisualizationArea.appendChild(document.createTextNode(' → '));
                  pathVisualizationArea.appendChild(nodeEl);
             } else if (pathVisualizationArea.lastChild && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
-                 pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); // Clean up trailing arrow if any
+                 pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); 
             }
         }
 
@@ -365,6 +447,8 @@
         async function backtrackStep() {
             if (explorationStack.length === 0) {
                 addLog("Exploration complete.");
+                highlightCodeLine(7, 'active'); 
+                await sleep(animationSpeed);
                 finalizeSolution_Backtracking();
                 return false; 
             }
@@ -374,42 +458,59 @@
             
             currentPath = [...path_taken]; 
             const itemForLog = index < N_items ? items[index].id : 'End';
-            addLog(`Pop state: Trying item ${itemForLog} (idx ${index}), W:${current_weight.toFixed(1)}, V:${current_value.toFixed(1)}, Path:[${path_taken.map(d => `I${items[d.item_index].id}${d.taken?':IN':':OUT'}`).join(',')}]`);
+            addLog(`Pop state: Try Item ${itemForLog} (idx ${index}), W:${current_weight.toFixed(1)}, V:${current_value.toFixed(1)}, Path:[${path_taken.map(d => `I${items[d.item_index].id}${d.taken?':IN':':OUT'}`).join(',')}]`);
+            highlightCodeLine(1); 
             renderCurrentPath(); 
+            await sleep(animationSpeed);
+
 
             if (index === N_items) { 
-                addLog(`  Leaf node reached. Value: ${current_value}, Weight: ${current_weight}`);
+                addLog(`  Leaf node. Value: ${current_value}, Weight: ${current_weight}`);
+                highlightCodeLine(3); 
+                await sleep(animationSpeed);
                 if (current_value > globalBest.value) {
+                    highlightCodeLine(4, 'solution');
+                    await sleep(animationSpeed/2);
                     globalBest.value = current_value;
                     globalBest.weight = current_weight;
                     globalBest.selection = path_taken.filter(d => d.taken).map(d => d.item_index);
                     addLog(`    NEW BEST! Value: ${globalBest.value.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',')}]`);
+                    highlightCodeLine(5, 'solution'); await sleep(animationSpeed/2);
+                    highlightCodeLine(6, 'solution'); 
                     updateBestSolutionDisplay();
                 }
+                highlightCodeLine(7); // return
                 await sleep(animationSpeed);
-                if(currentPath.length > 0) currentPath[currentPath.length-1].backtracked = true; 
+                if(currentPath.length > 0 && currentPath[currentPath.length-1].item_index === index -1) { // Mark the last decision in path as backtracked from
+                    currentPath[currentPath.length-1].backtracked = true; 
+                }
                 renderCurrentPath();
                 return true; 
             }
             
             const item = items[index];
             addLog(`  Considering Item ${item.id} (W:${item.weight}, V:${item.value})`);
-            // Display "Deciding Item..." after popping, which renderCurrentPath does if stack is not empty before next push
-            renderCurrentPath(); // Re-render to show "Deciding..." if applicable
+            highlightCodeLine(13); 
+            renderCurrentPath(); 
             await sleep(animationSpeed/2);
 
-            // Option 1: Exclude the current item (pushed first to be processed last in DFS)
+            // Option 1: Exclude the current item 
             addLog(`    Branch 1: Exclude Item ${item.id}`);
+            highlightCodeLine(10, 'branch');
             explorationStack.push({ 
                 index: index + 1, 
                 current_weight: current_weight, 
                 current_value: current_value, 
                 path_taken: [...path_taken, {item_index: index, taken: false, backtracked: false}] 
             });
+            await sleep(animationSpeed/2);
             
-            // Option 2: Include the current item (if it fits)
+            // Option 2: Include the current item 
+            highlightCodeLine(14, 'branch'); 
+            await sleep(animationSpeed/2);
             if (current_weight + item.weight <= W_capacity) {
-                addLog(`    Branch 2: Include Item ${item.id} (New W:${(current_weight + item.weight).toFixed(1)} <= ${W_capacity})`);
+                addLog(`    Branch 2: Include Item ${item.id} (W:${(current_weight + item.weight).toFixed(1)} <= ${W_capacity})`);
+                highlightCodeLine(15, 'branch');
                  explorationStack.push({ 
                     index: index + 1, 
                     current_weight: current_weight + item.weight, 
@@ -417,7 +518,8 @@
                     path_taken: [...path_taken, {item_index: index, taken: true, backtracked: false}] 
                 });
             } else {
-                addLog(`    Branch 2: Skip Include Item ${item.id} (New W:${(current_weight + item.weight).toFixed(1)} > ${W_capacity}) - Pruning.`);
+                addLog(`    Branch 2: Skip Include Item ${item.id} (W:${(current_weight + item.weight).toFixed(1)} > ${W_capacity}) - Pruning.`);
+                highlightCodeLine(17, 'prune'); 
             }
             
             await sleep(animationSpeed);
@@ -438,11 +540,12 @@
             addLog("--- Starting 0/1 Knapsack (Backtracking) ---");
             updateBestSolutionDisplay();
             renderCurrentPath();
+            clearCodeHighlights(); 
             return true;
         }
 
         function startExecution_Backtracking() {
-            if (isSolving) return; // Prevent multiple starts if already solving
+            if (isSolving) return; 
             if (!initializeAlgorithmState()) return;
 
             isSolving = true;
@@ -511,9 +614,14 @@
             autoplayIntervalId = null;
             isSolving = false;
             isPaused = false;
+            clearCodeHighlights();
             
             addLog("--- Backtracking Search Finished ---");
-            addLog(`Final Best Solution - Value: ${globalBest.value.toFixed(1)}, Weight: ${globalBest.weight.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',') || 'None'}]`);
+            if (globalBest.value > 0 || globalBest.selection.length > 0) { // Check if any solution was found
+                addLog(`Final Best Solution - Value: ${globalBest.value.toFixed(1)}, Weight: ${globalBest.weight.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',') || 'None'}]`);
+            } else {
+                addLog("No items selected or no solution found better than initial empty state.");
+            }
             updateBestSolutionDisplay(); 
             
             currentPath = globalBest.selection.map(idx => ({item_index: idx, taken: true, backtracked: true})); 
@@ -545,6 +653,7 @@
 
             if(inputError) inputError.textContent = ""; 
             pathVisualizationArea.innerHTML = '<p class="text-slate-400 text-sm">Exploration path will be shown here.</p>';
+            clearCodeHighlights();
 
             logArea.innerHTML = ''; 
             addLog("Log messages will appear here..."); 

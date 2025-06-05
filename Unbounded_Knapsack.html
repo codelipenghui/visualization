@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unbounded Knapsack Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; 
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; 
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; 
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; 
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; 
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; 
+            border-color: #334155;
+        }
+        .log-area {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 0.75rem;
+            min-height: 80px;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; 
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { 
+             accent-color: #64748b; 
+        }
+        .dp-table-container {
+            max-width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+        }
+        .dp-table td, .dp-table th {
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 0.4rem; 
+            text-align: center;
+            min-width: 45px; 
+            height: 45px;
+            transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
+            font-size: 0.75rem; 
+        }
+        .dp-table th {
+            color: #475569; /* slate-600 */
+            background-color: #f8fafc; /* slate-50 */
+            font-weight: 500;
+            position: sticky; /* Sticky headers for item column */
+            left: 0;
+            z-index: 1; 
+        }
+        .dp-table thead th { /* Ensure header row cells are also sticky */
+            top: 0;
+            z-index: 2; /* Higher z-index for column headers */
+        }
+
+        .dp-table thead th:first-child { /* Top-left corner cell */
+             z-index: 3; /* Highest z-index */
+        }
+
+         .dp-table th span.text-xs { 
+            font-size: 0.65rem; 
+            color: #64748b; /* slate-500 */
+        }
+        .highlight-current { 
+            background-color: #e2e8f0 !important; /* slate-200 */
+            color: #1e293b !important; /* slate-800 */
+            font-weight: 600;
+            outline: 1px solid #94a3b8; /* slate-400 */
+            outline-offset: -1px;
+        }
+        .highlight-cannot-include { /* When item weight > current capacity for this cell */
+            background-color: #f1f5f9 !important; /* slate-100, slightly different if needed */
+        }
+        .highlight-dependency { 
+            background-color: #f0f9ff; /* sky-50 */
+            outline: 1px dotted #bae6fd; /* sky-200 */
+        }
+        .highlight-chosen-dependency { 
+            background-color: #ecfdf5; /* emerald-50 */
+            outline: 1px solid #a7f3d0; /* emerald-200 */
+        }
+        .highlight-calculated { 
+            background-color: #ffffff; 
+        }
+        .text-item-taken-in-dp { /* For DP cell value if item was taken to achieve it */
+            color: #057a55; /* A darker green for text to stand out on light backgrounds */
+            font-weight: 600;
+        }
+        .text-item-not-taken-in-dp { /* For DP cell value if item was not taken */
+            color: #6b7280; /* gray-500 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-5xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">Unbounded Knapsack Problem</h1>
+            <p class="text-md text-slate-500 mt-1">Dynamic Programming Visualization</p>
+        </header>
+
+        <!-- Input Section -->
+        <section id="input-section" class="mb-6">
+            <h2 class="section-title">Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="item-weights" class="block label-text mb-1">Item Weights (csv):</label>
+                    <input type="text" id="item-weights" value="10,20,30,15,25,5,12,18,22,8" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="item-values" class="block label-text mb-1">Item Values (csv):</label>
+                    <input type="text" id="item-values" value="60,100,120,70,110,20,50,75,95,35" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="knapsack-capacity" class="block label-text mb-1">Knapsack Capacity:</label>
+                    <input type="number" id="knapsack-capacity" value="100" class="input-field block w-full">
+                </div>
+            </div>
+            <div id="input-error" class="mt-2 text-xs text-red-500"></div>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-btn" class="btn btn-primary">Start</button>
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="speed-slider" class="mr-2 label-text">Speed:</label>
+                    <input type="range" id="speed-slider" min="100" max="2000" value="700" step="100" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">700ms</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- DP Table Section -->
+        <section id="dp-table-section" class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">DP Table</h3>
+            <div id="dp-table-container" class="dp-table-container">
+                 <p class="text-center text-slate-400 py-4 text-sm">DP Table will render here.</p>
+            </div>
+        </section>
+
+        <!-- Log and Results Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Results</h3>
+                <p id="total-value-output" class="text-slate-700 text-sm">Max Value: <span class="font-semibold">-</span></p>
+                <p id="selected-items-info-output" class="text-slate-700 text-sm">Items Selected (ID: Count): <span class="font-semibold">-</span></p>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; Unbounded Knapsack Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const weightsInput = document.getElementById('item-weights');
+        const valuesInput = document.getElementById('item-values');
+        const capacityInput = document.getElementById('knapsack-capacity');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValueSpan = document.getElementById('speed-value');
+        const dpTableContainer = document.getElementById('dp-table-container');
+        const logArea = document.getElementById('log-area');
+        
+        const totalValueOutput = document.getElementById('total-value-output').querySelector('span');
+        const selectedItemsInfoOutput = document.getElementById('selected-items-info-output').querySelector('span');
+        const inputError = document.getElementById('input-error');
+
+        let items = []; 
+        let W_capacity = 0;
+        let N_items = 0; 
+        
+        let animationSpeed = 700;
+        let isSolving = false;
+        let isPaused = false;
+        let autoplayIntervalId = null;
+        
+        let dpData = []; 
+        let dpTableElements = []; 
+        let animationQueue = []; 
+        let isProcessingStep = false;
+
+        let userHasScrolledDPTable = false;
+        let dpTableScrollResumeTimer = null;
+        const DP_TABLE_SCROLL_RESUME_DELAY = 3000; 
+        let isProgrammaticDPScroll = false;
+
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function validateAndParseInputs() {
+            const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const capStr = capacityInput.value;
+
+            if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
+                inputError.textContent = "Error: All parameters required.";
+                return false;
+            }
+            if (weightsStr.length !== valuesStr.length) {
+                inputError.textContent = "Error: Item weights and values must have the same count.";
+                return false;
+            }
+
+            items = [];
+            try {
+                const parsedWeights = weightsStr.map(Number);
+                const parsedValues = valuesStr.map(Number);
+                W_capacity = parseInt(capStr);
+
+                if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
+                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                    return false;
+                }
+                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
+                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                    return false;
+                }
+
+                for (let i = 0; i < parsedWeights.length; i++) {
+                    items.push({
+                        id: i + 1, 
+                        original_index: i, 
+                        weight: parsedWeights[i],
+                        value: parsedValues[i]
+                    });
+                }
+                N_items = items.length;
+            } catch (e) {
+                inputError.textContent = "Error: Input parsing failed.";
+                return false;
+            }
+            
+            inputError.textContent = "";
+            return true;
+        }
+        
+        function initializeDPTableHTML() {
+            dpTableContainer.innerHTML = '';
+            const table = document.createElement('table');
+            table.className = 'dp-table w-full border-collapse';
+            const header = table.createTHead().insertRow();
+            const thCorner = document.createElement('th');
+            thCorner.innerHTML = 'Item<span class="text-xs text-slate-400">\\</span>Cap.';
+            header.appendChild(thCorner);
+
+            for (let j = 0; j <= W_capacity; j++) { 
+                const th = document.createElement('th');
+                th.textContent = j;
+                header.appendChild(th);
+            }
+
+            dpTableElements = [];
+            const tbody = table.createTBody();
+            for (let i = 0; i <= N_items; i++) { 
+                const row_elements = [];
+                const row = tbody.insertRow();
+                const thItem = document.createElement('th');
+                if (i === 0) {
+                    thItem.textContent = 'No Items';
+                } else {
+                    thItem.innerHTML = `Item ${items[i-1].id}<br><span class="text-xs text-slate-400">(W:${items[i-1].weight},V:${items[i-1].value})</span>`;
+                }
+                row.appendChild(thItem);
+
+                for (let j = 0; j <= W_capacity; j++) { 
+                    const cell = row.insertCell();
+                    cell.textContent = (i === 0 || j === 0) ? '0' : '-';
+                     if (i === 0 || j === 0) {
+                        cell.classList.add('highlight-calculated', 'text-item-not-taken-in-dp');
+                    } else {
+                        cell.classList.add('text-slate-400');
+                    }
+                    row_elements.push(cell);
+                }
+                dpTableElements.push(row_elements);
+            }
+            dpTableContainer.appendChild(table);
+        }
+        
+        function initializeAlgorithmState() {
+            if (!validateAndParseInputs()) return false;
+
+            dpData = Array(N_items + 1).fill(null).map(() => Array(W_capacity + 1).fill(0));
+            initializeDPTableHTML(); 
+            
+            animationQueue = [];
+            for (let i = 1; i <= N_items; i++) { 
+                for (let j = 1; j <= W_capacity; j++) { 
+                    animationQueue.push({i_dp: i, j_dp: j}); 
+                }
+            }
+            
+            logArea.innerHTML = '';
+            addLog("--- Starting Unbounded Knapsack (Dynamic Programming) ---");
+            totalValueOutput.textContent = "-";
+            selectedItemsInfoOutput.textContent = "-";
+            return true;
+        }
+        
+        function clearCellHighlights() {
+            for (let r = 0; r <= N_items; r++) {
+                for (let c = 0; c <= W_capacity; c++) {
+                    if (dpTableElements[r] && dpTableElements[r][c]) {
+                        dpTableElements[r][c].classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency', 'highlight-cannot-include');
+                    }
+                }
+            }
+        }
+
+        async function processSingleStep_Unbounded() {
+            if (animationQueue.length === 0 || isProcessingStep) {
+                if (animationQueue.length === 0 && isSolving) finalizeSolution_Unbounded();
+                return animationQueue.length > 0; 
+            }
+            isProcessingStep = true;
+            stepBtn.disabled = true; autoBtn.disabled = true; 
+
+            const {i_dp, j_dp} = animationQueue.shift(); 
+            const itemIndex = i_dp - 1; 
+            const item = items[itemIndex];
+
+            clearCellHighlights();
+            const currentCell = dpTableElements[i_dp][j_dp];
+            currentCell.classList.add('highlight-current');
+
+             // Auto-scroll DP table
+            if (!userHasScrolledDPTable && currentCell) {
+                isProgrammaticDPScroll = true;
+                // Scroll to center the cell in the container
+                const containerRect = dpTableContainer.getBoundingClientRect();
+                const cellRect = currentCell.getBoundingClientRect();
+                
+                const scrollLeft = dpTableContainer.scrollLeft + (cellRect.left - containerRect.left) - (containerRect.width / 2) + (cellRect.width / 2);
+                const scrollTop = dpTableContainer.scrollTop + (cellRect.top - containerRect.top) - (containerRect.height / 2) + (cellRect.height / 2);
+
+                dpTableContainer.scrollTo({
+                    left: scrollLeft,
+                    top: scrollTop,
+                    behavior: 'smooth'
+                });
+            }
+
+
+            let log_message = `Calculating dp[${i_dp}][${j_dp}] for Item ${item.id} (W:${item.weight}, V:${item.value}), Capacity: ${j_dp}\n`;
+
+            const value_without_current_type = dpData[i_dp-1][j_dp];
+            dpTableElements[i_dp-1][j_dp].classList.add('highlight-dependency');
+            log_message += `  - Option 1 (Exclude Item ${item.id} type): dp[${i_dp-1}][${j_dp}] = ${value_without_current_type}\n`;
+            
+            let value_with_current_type = -1; 
+            if (j_dp >= item.weight) {
+                value_with_current_type = item.value + dpData[i_dp][j_dp - item.weight];
+                dpTableElements[i_dp][j_dp - item.weight].classList.add('highlight-dependency');
+                log_message += `  - Option 2 (Include Item ${item.id} type): ${item.value} + dp[${i_dp}][${j_dp - item.weight}] = ${item.value} + ${dpData[i_dp][j_dp - item.weight]} = ${value_with_current_type}\n`;
+            } else {
+                log_message += `  Item ${item.id} (W:${item.weight}) > current capacity ${j_dp}. Cannot include for Option 2.\n`;
+                currentCell.classList.add('highlight-cannot-include'); 
+            }
+            
+            await sleep(animationSpeed);
+
+            if (j_dp >= item.weight && value_with_current_type > value_without_current_type) {
+                dpData[i_dp][j_dp] = value_with_current_type;
+                currentCell.classList.add('text-item-taken-in-dp');
+                log_message += `  Decision: Option 2 (Include) is better. dp[${i_dp}][${j_dp}] = ${dpData[i_dp][j_dp]}`;
+                dpTableElements[i_dp][j_dp - item.weight].classList.add('highlight-chosen-dependency');
+                dpTableElements[i_dp][j_dp - item.weight].classList.remove('highlight-dependency');
+                dpTableElements[i_dp-1][j_dp].classList.remove('highlight-chosen-dependency'); 
+            } else {
+                dpData[i_dp][j_dp] = value_without_current_type;
+                currentCell.classList.add('text-item-not-taken-in-dp');
+                log_message += `  Decision: Option 1 (Exclude) is better or item cannot be included. dp[${i_dp}][${j_dp}] = ${dpData[i_dp][j_dp]}`;
+                dpTableElements[i_dp-1][j_dp].classList.add('highlight-chosen-dependency');
+                dpTableElements[i_dp-1][j_dp].classList.remove('highlight-dependency');
+                if (j_dp >= item.weight && dpTableElements[i_dp][j_dp - item.weight]) {
+                     dpTableElements[i_dp][j_dp - item.weight].classList.remove('highlight-chosen-dependency');
+                }
+            }
+            
+            currentCell.textContent = dpData[i_dp][j_dp];
+            currentCell.classList.remove('highlight-current', 'highlight-cannot-include', 'text-slate-400');
+            currentCell.classList.add('highlight-calculated');
+            addLog(log_message);
+            await sleep(animationSpeed/2); 
+            
+            isProcessingStep = false;
+            if (animationQueue.length > 0 && isSolving) {
+                 if(isPaused) {
+                    stepBtn.disabled = false; autoBtn.disabled = false; pauseBtn.disabled = true;
+                 } else if (autoplayIntervalId){
+                    stepBtn.disabled = true; autoBtn.disabled = true; pauseBtn.disabled = false;
+                 }
+            } else if (animationQueue.length === 0 && isSolving) {
+                finalizeSolution_Unbounded();
+            }
+            return animationQueue.length > 0;
+        }
+
+
+        function startExecution_Unbounded() {
+            if (isSolving) return;
+            if (!initializeAlgorithmState()) return;
+
+            isSolving = true;
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true; 
+            autoBtn.disabled = true; 
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+
+            startAutoplay_Unbounded();
+        }
+
+        function startAutoplay_Unbounded() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false;
+
+            addLog("Autoplay started...");
+            
+            autoplayIntervalId = setInterval(async () => {
+                try {
+                    if (isPaused) return; 
+                    const moreSteps = await processSingleStep_Unbounded();
+                    if (!moreSteps) { 
+                        pauseAutoplay_Unbounded(true); 
+                    }
+                } catch (e) {
+                     console.error("Error in Unbounded Knapsack autoplay:", e);
+                     addLog("RUNTIME ERROR in autoplay: " + e.message);
+                     if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+                     finalizeSolution_Unbounded(); 
+                }
+            }, animationSpeed * 1.1); 
+        }
+
+        function pauseAutoplay_Unbounded(finishedNaturally = false) {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isPaused = true;
+
+            if (!finishedNaturally) {
+                addLog("--- Autoplay Paused ---");
+            }
+
+            if (isSolving) { 
+                startBtn.disabled = true;
+                stepBtn.disabled = animationQueue.length === 0;
+                autoBtn.disabled = animationQueue.length === 0;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+            }
+             if (finishedNaturally && animationQueue.length === 0) { 
+                finalizeSolution_Unbounded();
+            }
+        }
+        
+        function finalizeSolution_Unbounded() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            
+            const maxValue = dpData[N_items][W_capacity];
+            totalValueOutput.textContent = maxValue;
+            addLog("--- Unbounded Knapsack Solved ---");
+            addLog(`Max Value: ${maxValue}`);
+
+            let itemsCount = {};
+            let currentW = W_capacity;
+            for (let i = N_items; i > 0 && currentW > 0; i--) {
+                const item = items[i-1];
+                // Check if dpData[i][currentW] was achieved by including item 'i'
+                // The condition for unbounded knapsack:
+                // If dpData[i][currentW] == dpData[i][currentW - item.weight] + item.value
+                // (and currentW >= item.weight, and the previous state dpData[i][currentW - item.weight] is valid)
+                // it means at least one instance of item 'i' was taken to reach this state.
+                // We keep taking item 'i' as long as this condition holds for the reduced capacity.
+                while (currentW >= item.weight && dpData[i][currentW] === (dpData[i][currentW - item.weight] + item.value)) {
+                     if (dpData[i][currentW] === 0 && item.value === 0 && dpData[i][currentW - item.weight] === 0) { 
+                        if (currentW - item.weight === currentW && item.weight > 0) { /* Avoid infinite loop if item has 0 weight AND 0 value, though item.weight>0 is validated */ }
+                        else if(item.weight === 0 && item.value === 0) break; // Avoid infinite loop with 0 weight 0 value item
+                        else if (currentW - item.weight === currentW) break; // Safety for 0 weight item if not caught above
+                     }
+                    itemsCount[item.id] = (itemsCount[item.id] || 0) + 1;
+                    currentW -= item.weight;
+                     if (currentW < 0) {currentW = 0; break;} 
+                }
+                // If not by taking item 'i', it means it came from dpData[i-1][currentW] (not taking item 'i' in this step for this capacity)
+            }
+            
+            let selectedStr = Object.entries(itemsCount).map(([id, count]) => `Item ${id}: ${count}x`).join('; ');
+            selectedItemsInfoOutput.textContent = selectedStr || "None";
+            addLog(`Items Taken: ${selectedStr || "None"}`);
+            
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        function resetAll() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            animationQueue = [];
+            isProcessingStep = false;
+            userHasScrolledDPTable = false; // Reset scroll flag
+            clearTimeout(dpTableScrollResumeTimer);
+
+
+            weightsInput.value = "10,20,30,15,25,5,12,18,22,8"; 
+            valuesInput.value = "60,100,120,70,110,20,50,75,95,35"; 
+            capacityInput.value = "100";   
+
+            speedSlider.value = "700"; 
+            animationSpeed = 700; 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+
+            if(inputError) inputError.textContent = ""; 
+            dpTableContainer.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">DP Table will render here.</p>';
+
+
+            logArea.innerHTML = ''; 
+            addLog("Log messages will appear here..."); 
+            
+            totalValueOutput.textContent = "-";
+            selectedItemsInfoOutput.textContent = "-";
+
+
+            allItems = [];
+            W_capacity = 0;
+            N_items = 0;
+            dpData = [];
+            dpTableElements = [];
+
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        // Event Listeners
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value); 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        startBtn.addEventListener('click', startExecution_Unbounded);
+        
+        stepBtn.addEventListener('click', async () => {
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                isPaused = true; 
+                addLog("Initialized for stepping. Click Step to proceed.");
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                return;
+            }
+
+            if (isSolving && isPaused) { 
+                 await processSingleStep_Unbounded();
+            }
+        });
+
+        autoBtn.addEventListener('click', () => { 
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                startAutoplay_Unbounded();
+            } else if (isSolving && isPaused) { 
+                startAutoplay_Unbounded();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            if (isSolving && !isPaused) {
+                pauseAutoplay_Unbounded();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetAll);
+
+        // Add scroll listener to DP table container
+        dpTableContainer.addEventListener('scroll', () => {
+            if (isProgrammaticDPScroll) {
+                isProgrammaticDPScroll = false; 
+                return; 
+            }
+            userHasScrolledDPTable = true;
+            clearTimeout(dpTableScrollResumeTimer);
+            dpTableScrollResumeTimer = setTimeout(() => {
+                userHasScrolledDPTable = false;
+            }, DP_TABLE_SCROLL_RESUME_DELAY);
+        });
+        
+        // Initial call
+        resetAll();
+
+    </script>
+</body>
+</html>

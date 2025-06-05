@@ -14,17 +14,20 @@
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
-        .container-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0; /* slate-200 */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        .main-title {
+            font-size: 2.1rem; 
+        }
+        @media (min-width: 768px) { 
+            .main-title {
+                font-size: 2.5rem; 
+            }
         }
         .section-title {
             color: #334155; /* slate-700 */
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            font-size: 1.125rem;
+            font-size: 0.9rem; 
             font-weight: 600;
         }
         .label-text {
@@ -86,14 +89,23 @@
         .log-area {
             background-color: #f1f5f9; 
             border: 1px solid #e2e8f0; 
-            padding: 0.75rem;
-            min-height: 100px;
+            min-height: 0;
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 250px; 
-            overflow-y: auto;
+            max-height: 0; 
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out, padding 0.5s ease-in-out;
+            margin-top: 0;
             border-radius: 0.375rem;
+        }
+        .log-area.expanded {
+            max-height: 250px; 
+            opacity: 1;
+            margin-top: 1rem; 
+            padding: 0.75rem; 
+            overflow-y: auto;
         }
         .log-entry {
             margin-bottom: 0.3em;
@@ -134,51 +146,75 @@
             padding: 1rem;
             border-radius: 0.375rem;
             font-family: 'Roboto Mono', monospace; 
-            font-size: 0.75rem; /* Increased base code font size slightly */
-            line-height: 1.6; /* Increased line height for readability */
-            max-height: 320px; /* Slightly more height */
-            overflow-y: auto;
+            font-size: 0.75rem; 
+            line-height: 1.6; 
+            max-height: 0; 
+            opacity: 0;
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
+            margin-top: 0;
+        }
+        .code-visualization.expanded {
+            max-height: 70vh; 
+            opacity: 1;
+            margin-top: 1rem; 
+            overflow-y: auto; 
         }
         .code-line {
-            padding: 0.15rem 0.5rem; /* Adjusted padding */
+            padding: 0.15rem 0.5rem; 
             border-radius: 0.125rem;
             transition: background-color 0.2s ease-in-out;
             white-space: pre; 
         }
-        /* Syntax Highlighting Classes */
-        .python-keyword { color: #0ea5e9; /* sky-500 */ }
-        .python-function { color: #2563eb; /* blue-600 */ }
-        .python-parameters { color: #475569; /* slate-600 */ }
-        .python-comment { color: #64748b; /* slate-500 */ font-style: italic; }
-        .python-variable { color: #1e293b; /* slate-800 */ }
-        .python-operator { color: #ec4899; /* pink-500 */ }
-        .python-number { color: #f59e0b; /* amber-500 */ }
-        .python-string { color: #10b981; /* emerald-500 */ }
+        .python-keyword { color: #0ea5e9; }
+        .python-function { color: #2563eb; }
+        .python-parameters { color: #475569; }
+        .python-comment { color: #64748b; font-style: italic; }
+        .python-variable { color: #1e293b; }
+        .python-operator { color: #ec4899; }
+        .python-number { color: #f59e0b; }
         
-        /* Execution Highlighting Classes (applied to .code-line div) */
-        .highlight-code-active {
-            background-color: #e2e8f0; /* slate-200 */
+        .highlight-code-active { background-color: #e2e8f0; }
+        .highlight-code-branch { background-color: #ccfbf1; }
+        .highlight-code-prune { background-color: #fee2e2; }
+        .highlight-code-solution { background-color: #dcfce7; }
+
+        .collapsible-title {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-         .highlight-code-branch {
-            background-color: #ccfbf1; /* teal-100 */
+        .collapsible-title::after {
+            content: '[+]'; 
+            color: #64748b; /* slate-500 */
+            font-size: 0.8em;
+            margin-left: 8px;
+            transition: transform 0.3s ease-in-out;
         }
-        .highlight-code-prune {
-            background-color: #fee2e2; /* red-100 */
+        .collapsible-title.expanded::after {
+            content: '[-]'; 
         }
-        .highlight-code-solution {
-            background-color: #dcfce7; /* green-100 */
+        .content-section { 
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
         }
     </style>
 </head>
 <body>
-    <div class="container mx-auto max-w-4xl container-card p-4 md:p-8 my-8">
+    <div class="container mx-auto px-4 md:px-8 py-8">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Backtracking</h1>
+            <h1 class="main-title font-bold text-slate-700">0/1 Knapsack: Backtracking</h1>
             <p class="text-md text-slate-500 mt-1">Visualization</p>
         </header>
 
-        <!-- Input Section -->
-        <section id="input-section" class="mb-6">
+        <section id="input-section" class="content-section">
             <h2 class="section-title">Parameters</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -197,8 +233,7 @@
             <div id="input-error" class="mt-2 text-xs text-red-500"></div>
         </section>
 
-        <!-- Controls Section -->
-        <section id="controls-section" class="mb-6">
+        <section id="controls-section" class="content-section">
             <h2 class="section-title">Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
                 <button id="start-btn" class="btn btn-primary">Start</button>
@@ -214,58 +249,60 @@
             </div>
         </section>
         
-        <!-- Path Visualization Section -->
-        <section class="mb-6">
-            <h3 class="text-lg font-semibold mb-2 text-slate-700">Current Exploration Path</h3>
-            <div id="path-visualization-area" class="path-visualization">
-                <p class="text-slate-400 text-sm">Exploration path will be shown here.</p>
-            </div>
-        </section>
+        <!-- Main content area with two columns -->
+        <div class="flex flex-col md:flex-row gap-6 mt-6">
+            <!-- Left Column -->
+            <div class="md:w-3/5 space-y-6">
+                <section class="content-section">
+                    <h3 class="text-lg font-semibold mb-2 text-slate-700">Current Exploration Path</h3>
+                    <div id="path-visualization-area" class="path-visualization">
+                        <p class="text-slate-400 text-sm">Exploration path will be shown here.</p>
+                    </div>
+                </section>
 
-        <!-- Python Code Visualization -->
-        <section class="mb-6">
-            <h3 class="text-lg font-semibold mb-2 text-slate-700">Python Code (Conceptual)</h3>
-            <div id="code-visualization-area" class="code-visualization">
-                <div class="code-line" data-line="1"><span class="python-keyword">def</span> <span class="python-function">backtrack</span>(<span class="python-parameters">index, current_weight, current_value</span>):</div>
-                <div class="code-line" data-line="2">  <span class="python-comment"># Base Case: All items considered</span></div>
-                <div class="code-line" data-line="3">  <span class="python-keyword">if</span> <span class="python-variable">index</span> <span class="python-operator">==</span> <span class="python-variable">N_items</span>:</div>
-                <div class="code-line" data-line="4">    <span class="python-keyword">if</span> <span class="python-variable">current_value</span> <span class="python-operator">></span> <span class="python-variable">globalBest.value</span>:</div>
-                <div class="code-line" data-line="5">      <span class="python-variable">globalBest.value</span> <span class="python-operator">=</span> <span class="python-variable">current_value</span></div>
-                <div class="code-line" data-line="6">      <span class="python-variable">globalBest.selection</span> <span class="python-operator">=</span> <span class="python-comment"># current selection from path_taken</span></div>
-                <div class="code-line" data-line="7">    <span class="python-keyword">return</span></div>
-                <div class="code-line" data-line="8">  </div>
-                <div class="code-line" data-line="9">  <span class="python-comment"># Option 1: Exclude current item</span></div>
-                <div class="code-line" data-line="10"> <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span>, <span class="python-variable">current_value</span>)</div>
-                <div class="code-line" data-line="11"> </div>
-                <div class="code-line" data-line="12"> <span class="python-comment"># Option 2: Include current item (if it fits)</span></div>
-                <div class="code-line" data-line="13"> <span class="python-variable">item</span> <span class="python-operator">=</span> <span class="python-variable">items</span>[<span class="python-variable">index</span>]</div>
-                <div class="code-line" data-line="14"> <span class="python-keyword">if</span> <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span> <span class="python-operator">&lt;=</span> <span class="python-variable">W_capacity</span>:</div>
-                <div class="code-line" data-line="15">   <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span>, <span class="python-variable">current_value</span> <span class="python-operator">+</span> <span class="python-variable">item.value</span>)</div>
-                <div class="code-line" data-line="16"> <span class="python-keyword">else</span>:</div>
-                <div class="code-line" data-line="17">   <span class="python-comment"># Pruned: Item does not fit</span></div>
-                <div class="code-line" data-line="18">   <span class="python-keyword">pass</span></div>
+                <section class="content-section">
+                    <h3 class="section-title mb-2">Current Best Solution</h3>
+                     <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
+                    <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
+                    <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+                </section>
+                
+                <section id="system-log-section" class="content-section">
+                     <h3 id="log-title" class="section-title collapsible-title">Log</h3>
+                    <div id="log-area" class="log-area">
+                        <!-- Log entries will be appended here -->
+                    </div>
+                </section>
             </div>
-        </section>
 
-        <!-- Current Best Solution and Log -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="section-title mb-2">Current Best Solution</h3>
-                <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
-                <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
-                <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+            <!-- Right Column -->
+            <div class="md:w-2/5">
+                <section class="content-section">
+                    <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
+                    <div id="code-visualization-area-bnb" class="code-visualization expanded">
+                        <div class="code-line" data-line="1"><span class="python-keyword">def</span> <span class="python-function">backtrack</span>(<span class="python-parameters">index, current_weight, current_value</span>):</div>
+                        <div class="code-line" data-line="2">  <span class="python-comment"># Base Case: All items considered</span></div>
+                        <div class="code-line" data-line="3">  <span class="python-keyword">if</span> <span class="python-variable">index</span> <span class="python-operator">==</span> <span class="python-variable">N_items</span>:</div>
+                        <div class="code-line" data-line="4">    <span class="python-keyword">if</span> <span class="python-variable">current_value</span> <span class="python-operator">></span> <span class="python-variable">globalBest.value</span>:</div>
+                        <div class="code-line" data-line="5">      <span class="python-variable">globalBest.value</span> <span class="python-operator">=</span> <span class="python-variable">current_value</span></div>
+                        <div class="code-line" data-line="6">      <span class="python-variable">globalBest.selection</span> <span class="python-operator">=</span> <span class="python-comment"># current selection from path_taken</span></div>
+                        <div class="code-line" data-line="7">    <span class="python-keyword">return</span></div>
+                        <div class="code-line" data-line="8">  </div>
+                        <div class="code-line" data-line="9">  <span class="python-comment"># Option 1: Exclude current item</span></div>
+                        <div class="code-line" data-line="10"> <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span>, <span class="python-variable">current_value</span>)</div>
+                        <div class="code-line" data-line="11"> </div>
+                        <div class="code-line" data-line="12"> <span class="python-comment"># Option 2: Include current item (if it fits)</span></div>
+                        <div class="code-line" data-line="13"> <span class="python-variable">item</span> <span class="python-operator">=</span> <span class="python-variable">items</span>[<span class="python-variable">index</span>]</div>
+                        <div class="code-line" data-line="14"> <span class="python-keyword">if</span> <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span> <span class="python-operator">&lt;=</span> <span class="python-variable">W_capacity</span>:</div>
+                        <div class="code-line" data-line="15">   <span class="python-function">backtrack</span>(<span class="python-variable">index</span> <span class="python-operator">+</span> <span class="python-number">1</span>, <span class="python-variable">current_weight</span> <span class="python-operator">+</span> <span class="python-variable">item.weight</span>, <span class="python-variable">current_value</span> <span class="python-operator">+</span> <span class="python-variable">item.value</span>)</div>
+                        <div class="code-line" data-line="16"> <span class="python-keyword">else</span>:</div>
+                        <div class="code-line" data-line="17">   <span class="python-comment"># Pruned: Item does not fit</span></div>
+                        <div class="code-line" data-line="18">   <span class="python-keyword">pass</span></div>
+                    </div>
+                </section>
             </div>
-            <div>
-                <h3 class="section-title mb-2">Log</h3>
-                <div id="log-area" class="log-area">
-                    <p class="text-slate-400">Log messages will appear here...</p>
-                </div>
-            </div>
-        </section>
+        </div>
 
-        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p class="text-xs text-slate-400">&copy; Knapsack Backtracking Visualizer</p>
-        </footer>
     </div>
 
     <script>
@@ -280,26 +317,28 @@
         const speedSlider = document.getElementById('speed-slider');
         const speedValueSpan = document.getElementById('speed-value');
         const pathVisualizationArea = document.getElementById('path-visualization-area');
-        const codeVisualizationArea = document.getElementById('code-visualization-area');
+        const codeVisualizationAreaBnB = document.getElementById('code-visualization-area-bnb'); 
+        const codeTitle = document.getElementById('code-title'); 
         const logArea = document.getElementById('log-area');
+        const logTitle = document.getElementById('log-title'); 
         
         const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
         const bestWeightOutput = document.getElementById('best-weight-output').querySelector('span');
         const bestItemsOutput = document.getElementById('best-items-output').querySelector('span');
         const inputError = document.getElementById('input-error');
 
-        let items = []; 
-        let W_capacity = 0;
-        let N_items = 0;
+        var items = []; 
+        var W_capacity = 0; 
+        var N_items = 0; 
         
-        let animationSpeed = 500;
-        let isSolving = false;
-        let isPaused = false;
-        let autoplayIntervalId = null;
+        var animationSpeed = 500; 
+        var isSolving = false; 
+        var isPaused = false; 
+        var autoplayIntervalId = null; 
         
-        let globalBest = { value: 0, weight: 0, selection: [] }; 
-        let currentPath = []; 
-        let explorationStack = []; 
+        var globalBest = { value: 0, weight: 0, selection: [] }; 
+        var currentPath = []; 
+        var explorationStack = []; 
 
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
@@ -314,16 +353,17 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
         
-        function clearCodeHighlights() {
-            const lines = codeVisualizationArea.querySelectorAll('.code-line');
+        function clearCodeHighlights() { // Renamed for clarity from _BnB
+            const lines = codeVisualizationAreaBnB.querySelectorAll('.code-line');
             lines.forEach(line => line.classList.remove('highlight-code-active', 'highlight-code-branch', 'highlight-code-prune', 'highlight-code-solution'));
         }
 
-        function highlightCodeLine(lineNumber, type = 'active') {
+        function highlightCodeLine(lineNumber, type = 'active') { // Renamed for clarity
             clearCodeHighlights();
-            const line = codeVisualizationArea.querySelector(`.code-line[data-line="${lineNumber}"]`);
+            const line = codeVisualizationAreaBnB.querySelector(`.code-line[data-line="${lineNumber}"]`); // Use data-line
             if (line) {
                 line.classList.add(`highlight-code-${type}`);
+                // No auto-scroll: line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
             }
         }
 
@@ -334,15 +374,15 @@
             const capStr = capacityInput.value;
 
             if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
-                inputError.textContent = "Error: All parameters required.";
+                if(inputError) inputError.textContent = "Error: All parameters required.";
                 return false;
             }
             if (weightsStr.length !== valuesStr.length) {
-                inputError.textContent = "Error: Item weights and values must have the same count.";
+                 if(inputError) inputError.textContent = "Error: Item weights and values must have the same count.";
                 return false;
             }
              if (weightsStr.length > 10) { 
-                inputError.textContent = "Error: Max 10 items for backtracking visualization for performance reasons.";
+                 if(inputError) inputError.textContent = "Error: Max 10 items for backtracking visualization for performance reasons.";
                 return false;
             }
 
@@ -353,11 +393,11 @@
                 W_capacity = parseInt(capStr);
 
                 if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
-                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                     if(inputError) inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
                     return false;
                 }
                  if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
-                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                      if(inputError) inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
                     return false;
                 }
 
@@ -371,11 +411,11 @@
                 }
                 N_items = items.length;
             } catch (e) {
-                inputError.textContent = "Error: Input parsing failed.";
+                 if(inputError) inputError.textContent = "Error: Input parsing failed.";
                 return false;
             }
             
-            inputError.textContent = "";
+            if(inputError) inputError.textContent = "";
             return true;
         }
         
@@ -445,6 +485,7 @@
         }
 
         async function backtrackStep() {
+             if (!isSolving) return false;
             if (explorationStack.length === 0) {
                 addLog("Exploration complete.");
                 highlightCodeLine(7, 'active'); 
@@ -462,15 +503,18 @@
             highlightCodeLine(1); 
             renderCurrentPath(); 
             await sleep(animationSpeed);
+            if (!isSolving) { finalizeSolution_Backtracking(); return false;}
 
 
             if (index === N_items) { 
                 addLog(`  Leaf node. Value: ${current_value}, Weight: ${current_weight}`);
                 highlightCodeLine(3); 
                 await sleep(animationSpeed);
+                if (!isSolving) { finalizeSolution_Backtracking(); return false;}
                 if (current_value > globalBest.value) {
                     highlightCodeLine(4, 'solution');
                     await sleep(animationSpeed/2);
+                    if (!isSolving) { finalizeSolution_Backtracking(); return false;}
                     globalBest.value = current_value;
                     globalBest.weight = current_weight;
                     globalBest.selection = path_taken.filter(d => d.taken).map(d => d.item_index);
@@ -479,9 +523,9 @@
                     highlightCodeLine(6, 'solution'); 
                     updateBestSolutionDisplay();
                 }
-                highlightCodeLine(7); // return
+                highlightCodeLine(7); 
                 await sleep(animationSpeed);
-                if(currentPath.length > 0 && currentPath[currentPath.length-1].item_index === index -1) { // Mark the last decision in path as backtracked from
+                if(currentPath.length > 0 && currentPath[currentPath.length-1].item_index === index -1) { 
                     currentPath[currentPath.length-1].backtracked = true; 
                 }
                 renderCurrentPath();
@@ -493,8 +537,9 @@
             highlightCodeLine(13); 
             renderCurrentPath(); 
             await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution_Backtracking(); return false;}
 
-            // Option 1: Exclude the current item 
+
             addLog(`    Branch 1: Exclude Item ${item.id}`);
             highlightCodeLine(10, 'branch');
             explorationStack.push({ 
@@ -504,10 +549,11 @@
                 path_taken: [...path_taken, {item_index: index, taken: false, backtracked: false}] 
             });
             await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution_Backtracking(); return false;}
             
-            // Option 2: Include the current item 
             highlightCodeLine(14, 'branch'); 
             await sleep(animationSpeed/2);
+            if (!isSolving) { finalizeSolution_Backtracking(); return false;}
             if (current_weight + item.weight <= W_capacity) {
                 addLog(`    Branch 2: Include Item ${item.id} (W:${(current_weight + item.weight).toFixed(1)} <= ${W_capacity})`);
                 highlightCodeLine(15, 'branch');
@@ -543,59 +589,61 @@
             clearCodeHighlights(); 
             return true;
         }
+        
+        function scheduleNextAutoplayStep() {
+            if (autoplayIntervalId) clearTimeout(autoplayIntervalId);
 
-        function startExecution_Backtracking() {
-            if (isSolving) return; 
-            if (!initializeAlgorithmState()) return;
+            if (!isSolving || isPaused || explorationStack.length === 0) {
+                if (explorationStack.length === 0 && isSolving) {
+                    finalizeSolution_Backtracking();
+                }
+                if (isPaused && isSolving) {
+                    startBtn.disabled = true;
+                    stepBtn.disabled = explorationStack.length === 0;
+                    autoBtn.disabled = explorationStack.length === 0;
+                    pauseBtn.disabled = true;
+                    resetBtn.disabled = false;
+                }
+                return;
+            }
 
-            isSolving = true;
-            isPaused = false;
-            
-            startBtn.disabled = true;
-            stepBtn.disabled = true; 
-            autoBtn.disabled = true; 
-            pauseBtn.disabled = false;
-            resetBtn.disabled = false; 
-
-            startAutoplay_Backtracking();
+            autoplayIntervalId = setTimeout(async () => {
+                try {
+                    const moreSteps = await backtrackStep();
+                    if (moreSteps && isSolving && !isPaused) {
+                        scheduleNextAutoplayStep();
+                    } else if (isSolving) { // Step returned false or was paused
+                        if (!isPaused && explorationStack.length === 0) {
+                             finalizeSolution_Backtracking();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error in Backtracking autoplay:", e);
+                    addLog("RUNTIME ERROR in autoplay: " + e.message);
+                    finalizeSolution_Backtracking();
+                }
+            }, animationSpeed);
         }
 
-        function startAutoplay_Backtracking() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+
+        function startAutoplayAnimation() {
             isPaused = false;
-            
+            addLog("--- Autoplay Resumed/Started ---");
+
             startBtn.disabled = true;
             stepBtn.disabled = true;
             autoBtn.disabled = true;
             pauseBtn.disabled = false;
-            resetBtn.disabled = false;
+            resetBtn.disabled = false; 
 
-            addLog("Autoplay started...");
-            
-            autoplayIntervalId = setInterval(async () => {
-                try {
-                    if (isPaused) return; 
-                    const moreSteps = await backtrackStep();
-                    if (!moreSteps) { 
-                        pauseAutoplay_Backtracking(true); 
-                    }
-                } catch (e) {
-                     console.error("Error in Backtracking autoplay:", e);
-                     addLog("RUNTIME ERROR in autoplay: " + e.message);
-                     if(autoplayIntervalId) clearInterval(autoplayIntervalId);
-                     finalizeSolution_Backtracking(); 
-                }
-            }, animationSpeed); 
+            scheduleNextAutoplayStep();
         }
 
-        function pauseAutoplay_Backtracking(finishedNaturally = false) {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+        function pauseAutoplayAnimation() {
+            if (autoplayIntervalId) clearTimeout(autoplayIntervalId);
             autoplayIntervalId = null;
             isPaused = true;
-
-            if (!finishedNaturally) {
-                addLog("--- Autoplay Paused ---");
-            }
+            addLog("--- Autoplay Paused ---");
 
             if (isSolving) { 
                 startBtn.disabled = true;
@@ -604,23 +652,20 @@
                 pauseBtn.disabled = true;
                 resetBtn.disabled = false;
             }
-             if (finishedNaturally && explorationStack.length === 0) { 
-                finalizeSolution_Backtracking();
-            }
         }
         
         function finalizeSolution_Backtracking() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            if (autoplayIntervalId) clearTimeout(autoplayIntervalId);
             autoplayIntervalId = null;
             isSolving = false;
             isPaused = false;
             clearCodeHighlights();
             
             addLog("--- Backtracking Search Finished ---");
-            if (globalBest.value > 0 || globalBest.selection.length > 0) { // Check if any solution was found
+            if (globalBest.value > 0 || globalBest.selection.length > 0 || N_items === 0) { 
                 addLog(`Final Best Solution - Value: ${globalBest.value.toFixed(1)}, Weight: ${globalBest.weight.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',') || 'None'}]`);
             } else {
-                addLog("No items selected or no solution found better than initial empty state.");
+                addLog("No items selected or no solution found better than empty knapsack.");
             }
             updateBestSolutionDisplay(); 
             
@@ -636,7 +681,7 @@
         }
 
         function resetAll() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            if (autoplayIntervalId) clearTimeout(autoplayIntervalId);
             autoplayIntervalId = null;
             isSolving = false;
             isPaused = false;
@@ -681,52 +726,68 @@
             speedValueSpan.textContent = `${animationSpeed}ms`;
         });
         
-        startBtn.addEventListener('click', startExecution_Backtracking);
+        startBtn.addEventListener('click', () => {
+             if (isSolving) return; 
+            if (!initializeAlgorithmState()) return; 
+            isSolving = true; 
+            isPaused = false;
+            startAutoplayAnimation();
+        });
         
         stepBtn.addEventListener('click', async () => {
             if (!isSolving) { 
                 if (!initializeAlgorithmState()) return;
-                isSolving = true;
-                isPaused = true; 
-                addLog("Initialized for stepping. Click Step to proceed.");
-                startBtn.disabled = true;
-                stepBtn.disabled = false;
-                autoBtn.disabled = false;
-                pauseBtn.disabled = true;
-                resetBtn.disabled = false;
-                renderCurrentPath(); 
-                return;
+                isSolving = true; 
             }
+            isPaused = true; 
+            if (autoplayIntervalId) clearTimeout(autoplayIntervalId);
+            autoplayIntervalId = null;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = false; 
+            autoBtn.disabled = false; 
+            pauseBtn.disabled = true; 
+            resetBtn.disabled = false;
 
-            if (isSolving && isPaused) { 
-                 const moreSteps = await backtrackStep();
-                 if (!moreSteps) { 
-                    // Finalize is called by backtrackStep if it returns false
-                 } else { 
-                    stepBtn.disabled = false; 
-                    autoBtn.disabled = false;
-                    pauseBtn.disabled = true;
-                 }
+
+            const moreSteps = await backtrackStep();
+            if (!moreSteps) {
+                // finalizeSolution_Backtracking(); // Called by backtrackStep if stack empty
+            } else { 
+                 stepBtn.disabled = explorationStack.length === 0;
+                 autoBtn.disabled = explorationStack.length === 0;
             }
         });
 
         autoBtn.addEventListener('click', () => { 
             if (!isSolving) { 
                 if (!initializeAlgorithmState()) return;
-                isSolving = true;
-                startAutoplay_Backtracking();
-            } else if (isSolving && isPaused) { 
-                startAutoplay_Backtracking();
+                isSolving = true; 
             }
+            startAutoplayAnimation();
         });
         
         pauseBtn.addEventListener('click', () => {
             if (isSolving && !isPaused) {
-                pauseAutoplay_Backtracking();
+                pauseAutoplayAnimation();
             }
         });
 
         resetBtn.addEventListener('click', resetAll);
+
+        if(codeTitle) { 
+            codeTitle.addEventListener('click', () => { 
+                codeVisualizationAreaBnB.classList.toggle('expanded');
+                codeTitle.classList.toggle('expanded');
+            });
+        }
+         if(logTitle) { 
+            logTitle.addEventListener('click', () => { 
+                logArea.classList.toggle('expanded');
+                logTitle.classList.toggle('expanded');
+            });
+        }
+        
         
         // Initial call
         resetAll();

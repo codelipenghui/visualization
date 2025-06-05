@@ -194,18 +194,17 @@
         <section id="controls-section" class="mb-6">
             <h2 class="section-title">Solver Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
-                <button id="start-tsp-btn" class="btn btn-primary">Start</button>
-                <button id="step-tsp-btn" class="btn btn-secondary" disabled>Step</button>
-                <button id="auto-tsp-btn" class="btn btn-secondary" disabled>Auto</button> 
-                <button id="pause-tsp-btn" class="btn btn-secondary" disabled>Pause</button>
-                <button id="reset-tsp-btn" class="btn btn-danger">Reset</button>
+                <button id="start-btn" class="btn btn-primary">Start</button>
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-btn" class="btn btn-danger">Reset</button>
                  <div class="flex items-center md:ml-auto mt-2 md:mt-0">
                     <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
                     <input type="range" id="tsp-speed-slider" min="50" max="1500" value="500" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
                     <span id="tsp-speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">500ms</span>
                 </div>
             </div>
-            <p class="text-xs text-slate-500 mt-2">Note: "Start" runs the full animation. "Pause" stops the current run. "Step" or "Auto" after a pause will restart.</p>
         </section>
 
         <!-- Visualization Canvas -->
@@ -247,31 +246,32 @@
         const ctx = canvas.getContext('2d');
         const numCitiesInput = document.getElementById('num-cities');
         const generateCitiesBtn = document.getElementById('generate-cities-btn');
-        
-        const startTspBtn = document.getElementById('start-tsp-btn');
-        const stepTspBtn = document.getElementById('step-tsp-btn');
-        const autoTspBtn = document.getElementById('auto-tsp-btn');
-        const pauseTspBtn = document.getElementById('pause-tsp-btn');
-        const resetTspBtn = document.getElementById('reset-tsp-btn');
-
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
         const speedSlider = document.getElementById('tsp-speed-slider');
         const speedValueSpan = document.getElementById('tsp-speed-value');
         const logArea = document.getElementById('tsp-log-area');
         const pathOutput = document.getElementById('tsp-path-output').querySelector('span');
         const distanceOutput = document.getElementById('tsp-distance-output').querySelector('span');
         const dpTableContainerHeldKarp = document.getElementById('dp-table-container-held-karp');
+        // const inputError = document.getElementById('input-error'); // This element does not exist in this HTML.
 
         let cities = []; 
         let cityIdCounter = 0;
         let N = 0; 
         let distMatrix = [];
-        let dp = {}; 
-        let dpTableElements = {}; 
+        let dp_HK = {}; 
+        let path_HK = {}; 
+        let dpTableElements_HK = {}; 
 
-        let isSolvingTSP = false;
-        let animationSpeed = 500;
-        let currentSolveController = null; 
-        let isPausedByUser = false; // To track if user explicitly paused
+        let isSolving_HK = false;
+        let isPaused_HK = false;
+        let animationSpeed_HK = 500;
+        let autoplayIntervalId_HK = null;
+        let currentStepGenerator_HK = null; 
 
         const CITY_RADIUS = 7;
         const GRID_SPACING = 50;
@@ -309,12 +309,10 @@
                 ctx.arc(city.x, city.y, CITY_RADIUS, 0, Math.PI * 2);
                 let fillColor = CITY_COLOR_DEFAULT;
                 let strokeStyle = null;
-
                 if (index === 0) { 
                     fillColor = CITY_COLOR_START_END;
                     strokeStyle = CITY_BORDER_START_END;
                 }
-                
                 ctx.fillStyle = fillColor;
                 ctx.fill();
                 if (strokeStyle) {
@@ -336,14 +334,21 @@
         }
 
         function drawPath(pathIndices, color, lineWidth) {
-            if (!pathIndices || pathIndices.length < 2 || !cities[pathIndices[0]]) return;
+            if (!pathIndices || pathIndices.length < 2) return;
+            const firstCityIndex = pathIndices[0];
+            if (!cities[firstCityIndex]) return; 
+
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
             ctx.beginPath();
-            ctx.moveTo(cities[pathIndices[0]].x, cities[pathIndices[0]].y);
+            ctx.moveTo(cities[firstCityIndex].x, cities[firstCityIndex].y);
             for (let i = 1; i < pathIndices.length; i++) {
-                 if (cities[pathIndices[i]]) {
-                    ctx.lineTo(cities[pathIndices[i]].x, cities[pathIndices[i]].y);
+                 const cityIndex = pathIndices[i];
+                 if (cities[cityIndex]) {
+                    ctx.lineTo(cities[cityIndex].x, cities[cityIndex].y);
+                 } else {
+                    console.warn(`City at index ${cityIndex} not found for drawing path.`);
+                    break; 
                  }
             }
             ctx.stroke();
@@ -370,9 +375,8 @@
             drawCityLabels(); 
         }
 
-
         canvas.addEventListener('click', (event) => {
-            if (isSolvingTSP || cities.length >= parseInt(numCitiesInput.max)) return;
+            if (isSolving_HK || cities.length >= parseInt(numCitiesInput.max)) return;
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
@@ -384,7 +388,7 @@
         });
 
         generateCitiesBtn.addEventListener('click', () => {
-            if (isSolvingTSP) return;
+            if (isSolving_HK) return;
             cities = [];
             cityIdCounter = 0;
             N = Math.min(parseInt(numCitiesInput.value), parseInt(numCitiesInput.max)); 
@@ -402,26 +406,29 @@
             resetSolutionUI();
         });
         
-        resetTspBtn.addEventListener('click', resetSolutionFull);
+        resetBtn.addEventListener('click', resetSolutionFull);
 
         speedSlider.addEventListener('input', (e) => {
-            animationSpeed = parseInt(e.target.value);
-            speedValueSpan.textContent = `${animationSpeed}ms`;
+            animationSpeed_HK = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed_HK}ms`;
         });
         
         function resetSolutionUI(){
             pathOutput.textContent = "-";
             distanceOutput.textContent = "-";
-            dp = {};
-            dpTableElements = {};
+            dp_HK = {};
+            path_HK = {};
+            dpTableElements_HK = {};
             dpTableContainerHeldKarp.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">DP Table for Held-Karp will appear here.</p>';
             redrawCanvas(); 
         }
 
         function resetSolutionFull() {
-            if (currentSolveController) currentSolveController.abort();
-            isSolvingTSP = false;
-            isPausedByUser = false;
+            if (autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+            autoplayIntervalId_HK = null;
+            isSolving_HK = false;
+            isPaused_HK = false;
+            currentStepGenerator_HK = null;
             
             cities = []; 
             cityIdCounter = 0;
@@ -431,11 +438,16 @@
             logArea.innerHTML = ''; 
             addLog("System reset. Add or generate cities.");
 
-            startTspBtn.disabled = false;
+            startBtn.disabled = false;
             generateCitiesBtn.disabled = false;
-            stepTspBtn.disabled = true;
-            autoTspBtn.disabled = true;
-            pauseTspBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            numCitiesInput.value = "4"; // Reset num cities input
+            speedSlider.value = "500";
+            animationSpeed_HK = 500;
+            speedValueSpan.textContent = `${animationSpeed_HK}ms`;
+            // if (inputError) inputError.textContent = ""; // Only if inputError element exists
         }
         
         function calculateDistanceMatrix() {
@@ -474,7 +486,7 @@
             }
             
             const tbody = table.createTBody();
-            dpTableElements = {}; 
+            dpTableElements_HK = {}; 
 
             for (let mask = 1; mask < (1 << N); mask++) {
                 if (!((mask >> 0) & 1)) continue; 
@@ -487,7 +499,7 @@
                 thSubset.textContent = `{${subset.join(',')}} (m:${mask.toString(2).padStart(N, '0')})`;
                 row.appendChild(thSubset);
 
-                dpTableElements[mask] = {};
+                dpTableElements_HK[mask] = {};
                 for (let j = 0; j < N; j++) {
                     const cell = row.insertCell();
                     cell.textContent = '∞';
@@ -495,28 +507,39 @@
                         cell.textContent = '-';
                         cell.classList.add('text-slate-300');
                     }
-                    dpTableElements[mask][j] = cell;
+                    dpTableElements_HK[mask][j] = cell;
                 }
             }
             dpTableContainerHeldKarp.appendChild(table);
         }
+        
+        function clearAllHighlights() {
+            for (const maskKey in dpTableElements_HK) {
+                for (const endCityKey in dpTableElements_HK[maskKey]) {
+                    const cell = dpTableElements_HK[maskKey][endCityKey];
+                    if (cell) {
+                         cell.classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency');
+                    }
+                }
+            }
+            redrawCanvas(); 
+        }
 
-        async function solveHeldKarp(signal) {
+        async function* heldKarpGenerator() {
             calculateDistanceMatrix();
             initializeHeldKarpDPTableHTML();
-            dp = {}; 
+            dp_HK = {}; 
+            path_HK = {};
 
             const startNodeMask = 1 << 0; 
-            dp[startNodeMask] = {};
-            dp[startNodeMask][0] = 0;
-            if (dpTableElements[startNodeMask] && dpTableElements[startNodeMask][0]) {
-                 dpTableElements[startNodeMask][0].textContent = '0';
-                 dpTableElements[startNodeMask][0].classList.add('highlight-calculated', 'text-item-included');
+            dp_HK[startNodeMask] = {};
+            dp_HK[startNodeMask][0] = 0;
+            if (dpTableElements_HK[startNodeMask] && dpTableElements_HK[startNodeMask][0]) {
+                 dpTableElements_HK[startNodeMask][0].textContent = '0';
+                 dpTableElements_HK[startNodeMask][0].classList.add('highlight-calculated', 'text-item-included');
             }
             addLog(`Base case: dp[{0} (mask ${startNodeMask.toString(2).padStart(N,'0')})][0] = 0`);
-            await sleep(animationSpeed);
-            if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
-
+            yield; 
 
             for (let s = 2; s <= N; s++) {
                 addLog(`\nProcessing subsets of size ${s}:`);
@@ -526,17 +549,18 @@
                     const subset = getSubsetCities(mask);
                     if (subset.length !== s) continue;
 
-                    if (!dp[mask]) dp[mask] = {};
+                    if (!dp_HK[mask]) dp_HK[mask] = {};
+                    if (!path_HK[mask]) path_HK[mask] = {};
 
                     for (const j of subset) { 
                         if (j === 0 && s > 1) continue; 
-                        if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
-
-
-                        if (dpTableElements[mask] && dpTableElements[mask][j]) {
-                            dpTableElements[mask][j].classList.add('highlight-current');
+                        
+                        clearAllHighlights();
+                        if (dpTableElements_HK[mask] && dpTableElements_HK[mask][j]) {
+                            dpTableElements_HK[mask][j].classList.add('highlight-current');
                         }
                         addLog(`  Calculating dp[{${subset.join(',')}}][${j}]:`);
+                        yield; 
                         
                         let minCostForCurrentCell = Infinity;
                         let bestPrevK = -1;
@@ -547,250 +571,287 @@
                         const prevSubset = getSubsetCities(prevMask);
 
                         for (const k of prevSubset) { 
-                            if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
-
-                            if (dp[prevMask] && dp[prevMask][k] !== undefined && dp[prevMask][k] !== Infinity) {
-                                const cost = dp[prevMask][k] + distMatrix[k][j];
-                                addLog(`    Trying path ...${k} -> ${j}. Cost = (dp[{${prevSubset.join(',')}}][${k}]=${dp[prevMask][k].toFixed(1)}) + dist(${k},${j}=${distMatrix[k][j].toFixed(1)}) = ${cost.toFixed(1)}`);
+                            if (dp_HK[prevMask] && dp_HK[prevMask][k] !== undefined && dp_HK[prevMask][k] !== Infinity) {
+                                const cost = dp_HK[prevMask][k] + distMatrix[k][j];
+                                addLog(`    Trying path ...${k} -> ${j}. Cost = (dp[{${prevSubset.join(',')}}][${k}]=${dp_HK[prevMask][k].toFixed(1)}) + dist(${k},${j}=${distMatrix[k][j].toFixed(1)}) = ${cost.toFixed(1)}`);
                                 
-                                if (dpTableElements[prevMask] && dpTableElements[prevMask][k]) {
-                                    dpTableElements[prevMask][k].classList.add('highlight-dependency');
+                                if (dpTableElements_HK[prevMask] && dpTableElements_HK[prevMask][k]) {
+                                    dpTableElements_HK[prevMask][k].classList.add('highlight-dependency');
                                 }
                                 redrawCanvas(null, {from: k, to: j, color: PATH_COLOR_CALC_EDGE});
+                                yield; 
 
                                 if (cost < minCostForCurrentCell) {
                                     minCostForCurrentCell = cost;
                                     bestPrevK = k;
                                 }
-                                await sleep(animationSpeed);
-                                if (dpTableElements[prevMask] && dpTableElements[prevMask][k]) {
-                                    dpTableElements[prevMask][k].classList.remove('highlight-dependency');
+                                if (dpTableElements_HK[prevMask] && dpTableElements_HK[prevMask][k]) {
+                                    dpTableElements_HK[prevMask][k].classList.remove('highlight-dependency');
                                 }
                             }
                         }
                         
-                        dp[mask][j] = minCostForCurrentCell;
-                        if (dpTableElements[mask] && dpTableElements[mask][j]) {
-                            dpTableElements[mask][j].textContent = dp[mask][j] === Infinity ? '∞' : dp[mask][j].toFixed(1);
-                            dpTableElements[mask][j].classList.remove('highlight-current');
-                            dpTableElements[mask][j].classList.add('highlight-calculated', dp[mask][j] === Infinity ? 'text-item-not-included' : 'text-item-included');
-                            if (bestPrevK !== -1 && dpTableElements[prevMask] && dpTableElements[prevMask][bestPrevK]) {
-                                 dpTableElements[prevMask][bestPrevK].classList.add('highlight-chosen-dependency');
+                        dp_HK[mask][j] = minCostForCurrentCell;
+                        path_HK[mask][j] = bestPrevK; 
+
+                        if (dpTableElements_HK[mask] && dpTableElements_HK[mask][j]) {
+                            dpTableElements_HK[mask][j].textContent = dp_HK[mask][j] === Infinity ? '∞' : dp_HK[mask][j].toFixed(1);
+                            dpTableElements_HK[mask][j].classList.remove('highlight-current');
+                            dpTableElements_HK[mask][j].classList.add('highlight-calculated', dp_HK[mask][j] === Infinity ? 'text-item-not-included' : 'text-item-included');
+                            if (bestPrevK !== -1 && dpTableElements_HK[prevMask] && dpTableElements_HK[prevMask][bestPrevK]) {
+                                 dpTableElements_HK[prevMask][bestPrevK].classList.add('highlight-chosen-dependency');
                             }
                         }
-                        addLog(`  -> dp[{${subset.join(',')}}][${j}] = ${dp[mask][j] === Infinity ? '∞' : dp[mask][j].toFixed(1)} (via city ${bestPrevK})`);
-                        await sleep(animationSpeed);
-                        clearHighlights(); 
+                        addLog(`  -> dp[{${subset.join(',')}}][${j}] = ${dp_HK[mask][j] === Infinity ? '∞' : dp_HK[mask][j].toFixed(1)} (via city ${bestPrevK})`);
                         redrawCanvas(); 
+                        yield; 
+                        if (bestPrevK !== -1 && dpTableElements_HK[prevMask] && dpTableElements_HK[prevMask][bestPrevK]) {
+                            dpTableElements_HK[prevMask][bestPrevK].classList.remove('highlight-chosen-dependency');
+                        }
                     }
                 }
             }
-
-            if (signal.aborted || isPausedByUser) { addLog("Solving stopped before final calculation."); return { cost: Infinity, path: [] }; }
-
-
+            
             const finalMask = (1 << N) - 1; 
             let minTotalCost = Infinity;
             let lastCityBeforeReturning = -1;
 
             addLog("\nFinal step: Calculating return to start city 0:");
-            if (!dp[finalMask] && N > 1) { 
+            if (!dp_HK[finalMask] && N > 1) { 
                  addLog("Error: DP state for all cities visited is missing.");
-                 return { cost: Infinity, path: [] };
+                 return; 
             }
             if (N === 1) { 
-                 return { cost: 0, path: [0] };
-            }
+                 minTotalCost = 0;
+                 lastCityBeforeReturning = 0; 
+                 addLog(`  Single city tour. Cost: 0`);
+                 yield;
+            } else {
+                for (let j = 1; j < N; j++) { 
+                    clearAllHighlights();
+                    if (dp_HK[finalMask] && dp_HK[finalMask][j] !== undefined && dp_HK[finalMask][j] !== Infinity) {
+                        const cost = dp_HK[finalMask][j] + distMatrix[j][0];
+                        addLog(`  Path ending at ${j}, then to 0: (dp[all][${j}]=${dp_HK[finalMask][j].toFixed(1)}) + dist(${j},0=${distMatrix[j][0].toFixed(1)}) = ${cost.toFixed(1)}`);
+                        if (dpTableElements_HK[finalMask] && dpTableElements_HK[finalMask][j]) {
+                             dpTableElements_HK[finalMask][j].classList.add('highlight-dependency');
+                        }
+                        redrawCanvas(null, {from: j, to: 0, color: PATH_COLOR_CALC_EDGE});
+                        yield;
 
-
-            for (let j = 1; j < N; j++) { 
-                 if (signal.aborted || isPausedByUser) { addLog("Solving stopped."); return { cost: Infinity, path: [] }; }
-
-                if (dp[finalMask] && dp[finalMask][j] !== undefined && dp[finalMask][j] !== Infinity) {
-                    const cost = dp[finalMask][j] + distMatrix[j][0];
-                    addLog(`  Path ending at ${j}, then to 0: (dp[all][${j}]=${dp[finalMask][j].toFixed(1)}) + dist(${j},0=${distMatrix[j][0].toFixed(1)}) = ${cost.toFixed(1)}`);
-                    if (dpTableElements[finalMask] && dpTableElements[finalMask][j]) {
-                         dpTableElements[finalMask][j].classList.add('highlight-dependency');
-                    }
-                    redrawCanvas(null, {from: j, to: 0, color: PATH_COLOR_CALC_EDGE});
-                    await sleep(animationSpeed);
-
-                    if (cost < minTotalCost) {
-                        minTotalCost = cost;
-                        lastCityBeforeReturning = j;
-                    }
-                     if (dpTableElements[finalMask] && dpTableElements[finalMask][j]) {
-                         dpTableElements[finalMask][j].classList.remove('highlight-dependency');
-                    }
-                }
-            }
-             redrawCanvas(); 
-
-
-            if (lastCityBeforeReturning !== -1 && dpTableElements[finalMask] && dpTableElements[finalMask][lastCityBeforeReturning]) {
-                dpTableElements[finalMask][lastCityBeforeReturning].classList.add('highlight-chosen-dependency');
-            }
-            addLog(`-> Minimum total tour cost: ${minTotalCost === Infinity ? 'N/A' : minTotalCost.toFixed(1)} (last city before returning to 0 is ${lastCityBeforeReturning})`);
-            
-            if (signal.aborted || isPausedByUser) { addLog("Solving stopped before path reconstruction."); return { cost: minTotalCost, path: [] }; }
-
-
-            let currentPath = [];
-            let currentMask = finalMask;
-            let currentLastCity = lastCityBeforeReturning;
-
-            if (minTotalCost === Infinity && N > 1) {
-                 return { cost: Infinity, path: [] };
-            }
-            if (N===1) return { cost: 0, path: [0] }; 
-
-
-            while (currentLastCity !== undefined && currentLastCity !== -1 && currentMask !== 0) {
-                currentPath.unshift(currentLastCity);
-                if (currentMask === (1 << currentLastCity) && currentLastCity === 0) break; 
-
-                const prevMask = currentMask ^ (1 << currentLastCity);
-                let prevCity = -1;
-                
-                if (prevMask === 0) { 
-                    prevCity = 0; 
-                } else {
-                    for (let k = 0; k < N; k++) { 
-                        if (!((prevMask >> k) & 1)) continue; 
-                        if (dp[prevMask] && dp[prevMask][k] !== undefined && dp[prevMask][k] !== Infinity) {
-                             if (Math.abs((dp[prevMask][k] + distMatrix[k][currentLastCity]) - dp[currentMask][currentLastCity]) < 1e-5) { 
-                                prevCity = k;
-                                break; 
-                            }
+                        if (cost < minTotalCost) {
+                            minTotalCost = cost;
+                            lastCityBeforeReturning = j;
                         }
                     }
                 }
-
-                if (prevCity === -1 && prevMask !==0 ) { 
-                     addLog(`Error reconstructing path at mask ${currentMask.toString(2)}, city ${currentLastCity}. prevMask: ${prevMask.toString(2)}`);
-                     break; 
-                }
-
-                currentMask = prevMask;
-                currentLastCity = prevCity;
-
-                 if (currentPath.length > N + 2) { 
-                    addLog("Error: Path reconstruction possibly stuck in a loop.");
-                    currentPath = []; 
-                    break;
-                }
             }
-             if (currentPath[0] !== 0 && N > 1) { 
-                currentPath.unshift(0);
-            } else if (N===1 && currentPath.length === 0) {
-                currentPath.push(0);
-            }
+            redrawCanvas(); 
 
-            return { cost: minTotalCost, path: currentPath };
+            if (lastCityBeforeReturning !== -1 && N > 1 && dpTableElements_HK[finalMask] && dpTableElements_HK[finalMask][lastCityBeforeReturning]) {
+                dpTableElements_HK[finalMask][lastCityBeforeReturning].classList.add('highlight-chosen-dependency');
+            }
+            addLog(`-> Minimum total tour cost: ${minTotalCost === Infinity ? 'N/A' : minTotalCost.toFixed(1)} (last city before returning to 0 is ${lastCityBeforeReturning})`);
+            yield; 
+
+            let reconstructedPath = [];
+            if (minTotalCost !== Infinity) {
+                let curr = lastCityBeforeReturning;
+                let mask = finalMask;
+                while (curr !== undefined && curr !== -1 && mask !== 0) {
+                    reconstructedPath.unshift(curr);
+                    if (mask === (1 << curr) && curr === 0) break; 
+                    
+                    const prev = path_HK[mask] ? path_HK[mask][curr] : -1; 
+                    if (prev === undefined || prev === -1) { 
+                        if (mask !== (1 << curr)) { 
+                             addLog(`Warning: Path reconstruction issue. Could not find predecessor for city ${curr} in mask ${mask.toString(2)}.`);
+                        }
+                        break; 
+                    }
+                    mask ^= (1 << curr);
+                    curr = prev;
+                }
+                 if (N > 1 && (reconstructedPath.length === 0 || reconstructedPath[0] !== 0)) { 
+                    if (!reconstructedPath.includes(0)) reconstructedPath.unshift(0);
+                 } else if (N === 1 && reconstructedPath.length === 0) {
+                    reconstructedPath.push(0);
+                 }
+
+
+                addLog("Reconstructed path (indices): " + reconstructedPath.join(' -> '));
+                redrawCanvas(null, null, reconstructedPath);
+                pathOutput.textContent = reconstructedPath.map(idx => cities[idx]? cities[idx].id : '?').join(' -> ') + (reconstructedPath.length > 0 && cities[reconstructedPath[0]] ? ` -> ${cities[reconstructedPath[0]].id}` : "");
+                distanceOutput.textContent = minTotalCost.toFixed(2);
+            } else {
+                 pathOutput.textContent = "N/A";
+                 distanceOutput.textContent = "N/A";
+            }
+            yield; 
         }
 
-        async function executeSolvingProcess() {
-            if (isSolvingTSP) return; 
-            if (cities.length < 1) {
-                 addLog("Add at least 1 city (max " + numCitiesInput.max + ") to solve with Held-Karp.");
-                return;
+        
+        async function processStep_HK() {
+            if (!currentStepGenerator_HK || !isSolving_HK) return;
+            
+            stepBtn.disabled = true; 
+            autoBtn.disabled = true;
+
+            const result = await currentStepGenerator_HK.next();
+            
+            if (result.done) {
+                finalizeSolution_HK();
+            } else if (isSolving_HK && isPaused_HK) { 
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+            } else if (isSolving_HK && !isPaused_HK && autoplayIntervalId_HK) { 
+                 stepBtn.disabled = true;
+                 autoBtn.disabled = true;
+                 pauseBtn.disabled = false;
+            }
+        }
+
+        function startExecution_HK() {
+            if (cities.length < 1) { // Allow N=1 for Held-Karp base case
+                addLog("Add at least 1 city."); return;
             }
              if (cities.length > parseInt(numCitiesInput.max)) {
-                addLog(`Held-Karp visualization is limited to ${numCitiesInput.max} cities. Please reduce number of cities.`);
-                return;
+                addLog(`Max ${numCitiesInput.max} cities for Held-Karp visualization.`); return;
             }
-            
-            isSolvingTSP = true;
-            isPausedByUser = false; // Reset pause flag for a new run
-            if (currentSolveController) currentSolveController.abort(); // Abort previous if any
-            currentSolveController = new AbortController();
-            const signal = currentSolveController.signal;
 
-            // Update button states for solving
-            startTspBtn.disabled = true;
-            stepTspBtn.disabled = true; // True step-by-step not implemented for Held-Karp
-            autoTspBtn.disabled = true;  // Auto is essentially "Start"
-            pauseTspBtn.disabled = false; // Can pause (stop)
-            resetTspBtn.disabled = false; 
+            isSolving_HK = true;
+            isPaused_HK = false;
+            
+            logArea.innerHTML = '';
+            // treeVisualizationArea.innerHTML = ''; // DP Table container is separate
+            // if(treePlaceholder) treePlaceholder.style.display = 'block'; // Not used for DP table
+            addLog("--- Starting Held-Karp Algorithm ---");
+
+            pathOutput.textContent = "-";
+            distanceOutput.textContent = "-";
+            
+            currentStepGenerator_HK = heldKarpGenerator();
+            startAutoplay_HK(); 
+        }
+
+        function startAutoplay_HK() {
+            if (autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+            isPaused_HK = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
             generateCitiesBtn.disabled = true;
 
+            addLog("Autoplay started...");
+            
+            autoplayIntervalId_HK = setInterval(async () => {
+                try {
+                    if (isPaused_HK) return; 
+                    await processStep_HK(); 
+                } catch (e) {
+                     console.error("Error in Held-Karp autoplay interval:", e);
+                     addLog("RUNTIME ERROR in autoplay: " + e.message);
+                     if(autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+                     finalizeSolution_HK(); 
+                }
+            }, animationSpeed_HK);
+        }
+
+        function pauseAutoplay_HK() {
+            if (autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+            autoplayIntervalId_HK = null;
+            isPaused_HK = true;
+            addLog("--- Autoplay Paused ---");
+
+            if (isSolving_HK) { 
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                generateCitiesBtn.disabled = true; 
+            }
+        }
+        
+        function finalizeSolution_HK() {
+            if (autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+            autoplayIntervalId_HK = null;
+            isSolving_HK = false;
+            isPaused_HK = false;
+            currentStepGenerator_HK = null;
+            addLog("--- Held-Karp Algorithm Finished ---");
+            
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+            generateCitiesBtn.disabled = false;
+        }
+
+        function resetAll() {
+            if (autoplayIntervalId_HK) clearInterval(autoplayIntervalId_HK);
+            autoplayIntervalId_HK = null;
+            isSolving_HK = false;
+            isPaused_HK = false;
+            currentStepGenerator_HK = null;
+            
+            numCitiesInput.value = "4"; 
+            speedSlider.value = "500"; 
+            animationSpeed_HK = 500;
+            speedValueSpan.textContent = `${animationSpeed_HK}ms`;
+
+            // inputError.textContent = ""; // No inputError element in this HTML
+            dpTableContainerHeldKarp.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">DP Table for Held-Karp will appear here.</p>';
+
+
             logArea.innerHTML = ''; 
-            addLog(`Starting Held-Karp for ${N} cities...`);
+            addLog("Log messages will appear here..."); 
+            
             pathOutput.textContent = "-";
             distanceOutput.textContent = "-";
 
+            cities = [];
+            cityIdCounter = 0;
+            N = 0;
+            distMatrix = [];
+            dp_HK = {};
+            path_HK = {};
+            dpTableElements_HK = {};
 
-            try {
-                const result = await solveHeldKarp(signal);
-                if (signal.aborted) { // Aborted by reset or new start
-                    addLog("Held-Karp solving aborted.");
-                } else if (isPausedByUser) { // Stopped by user pause
-                     addLog("Held-Karp solving stopped by user via Pause.");
-                } else if (result.cost !== Infinity) {
-                    addLog(`Held-Karp finished. Optimal tour cost: ${result.cost.toFixed(2)}`);
-                    const displayPath = result.path.map(idx => cities[idx] ? cities[idx].id : '?');
-                    pathOutput.textContent = displayPath.join(' -> ') + (displayPath.length > 0 && displayPath[0] !== undefined ? ` -> ${displayPath[0]}` : "");
-                    distanceOutput.textContent = result.cost.toFixed(2);
-                    redrawCanvas(null, null, result.path); 
-                } else {
-                    addLog("No feasible solution found by Held-Karp (or N=0).");
-                     pathOutput.textContent = "N/A";
-                    distanceOutput.textContent = "N/A";
-                     redrawCanvas(); 
-                }
-            } catch (error) {
-                 if (error.name === 'AbortError') { // Should be caught by signal.aborted
-                    addLog("Held-Karp solving process was aborted.");
-                } else {
-                    addLog("Error during Held-Karp: " + error.message);
-                    console.error(error);
-                }
-            } finally {
-                isSolvingTSP = false; // Mark solving as complete or stopped
-                // Reset button states based on whether it was a full completion or a pause/abort
-                if (isPausedByUser || signal.aborted) {
-                    startTspBtn.disabled = false;
-                    stepTspBtn.disabled = false; // Allow re-triggering
-                    autoTspBtn.disabled = false; // Allow re-triggering
-                    pauseTspBtn.disabled = true;
-                } else { // Natural completion
-                    startTspBtn.disabled = false;
-                    stepTspBtn.disabled = true;
-                    autoTspBtn.disabled = true;
-                    pauseTspBtn.disabled = true;
-                }
-                generateCitiesBtn.disabled = false;
-            }
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+            generateCitiesBtn.disabled = false;
+            redrawCanvas();
         }
-        
-        startTspBtn.addEventListener('click', executeSolvingProcess);
-        stepTspBtn.addEventListener('click', executeSolvingProcess); // Step also restarts
-        autoTspBtn.addEventListener('click', executeSolvingProcess);   // Auto also restarts
 
-        pauseTspBtn.addEventListener('click', () => {
-            if (isSolvingTSP && !isPausedByUser) {
-                isPausedByUser = true; // Signal the loop to stop
-                if (currentSolveController) currentSolveController.abort(); // Also send abort, loop checks both
-                addLog("Pause requested. Current process will stop.");
-                // Button states will be updated in the `finally` block of `executeSolvingProcess`
-            }
+        // Event Listeners
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed_HK = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed_HK}ms`;
         });
         
-        function clearHighlights() { 
-            for (const maskKey in dpTableElements) {
-                for (const endCityKey in dpTableElements[maskKey]) {
-                    const cell = dpTableElements[maskKey][endCityKey];
-                    if (cell) { // Check if cell exists
-                        cell.classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency');
-                    }
-                }
+        startBtn.addEventListener('click', startExecution_HK);
+        stepBtn.addEventListener('click', processStep_HK);
+        autoBtn.addEventListener('click', () => { 
+            if(isSolving_HK && isPaused_HK){
+                startAutoplay_HK();
+            } else if (!isSolving_HK) {
+                startExecution_HK(); 
             }
-        }
-
-        // Initial setup
-        speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        pauseBtn.addEventListener('click', pauseAutoplay_HK);
+        resetBtn.addEventListener('click', resetAll);
+        
+        // Initial call
+        resetAll();
         generateCitiesBtn.click(); 
-        addLog("Canvas ready. Add/Generate cities (max " + numCitiesInput.max + " for Held-Karp).");
 
     </script>
 </body>

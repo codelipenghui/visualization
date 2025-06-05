@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0/1 Knapsack - Backtracking Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; 
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; 
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; 
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; 
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; 
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; 
+            border-color: #334155;
+        }
+        .log-area {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 0.75rem;
+            min-height: 100px;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 250px; 
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; 
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { 
+             accent-color: #64748b; 
+        }
+        .path-visualization {
+            min-height: 100px;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            background-color: #ffffff;
+            font-size: 0.75rem;
+        }
+        .path-node {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            border-radius: 0.25rem;
+            border: 1px solid #cbd5e1;
+        }
+        .path-node.included { background-color: #d1fae5; border-color: #6ee7b7;} /* emerald */
+        .path-node.excluded { background-color: #fee2e2; border-color: #fca5a5;} /* red */
+        .path-node.current-decision { background-color: #e0f2fe; border-color: #7dd3fc;} /* sky */
+        .path-node.backtracked { text-decoration: line-through; color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">0/1 Knapsack: Backtracking</h1>
+            <p class="text-md text-slate-500 mt-1">Visualization</p>
+        </header>
+
+        <!-- Input Section -->
+        <section id="input-section" class="mb-6">
+            <h2 class="section-title">Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="item-weights" class="block label-text mb-1">Item Weights (csv):</label>
+                    <input type="text" id="item-weights" value="10,20,30" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="item-values" class="block label-text mb-1">Item Values (csv):</label>
+                    <input type="text" id="item-values" value="60,100,120" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="knapsack-capacity" class="block label-text mb-1">Knapsack Capacity:</label>
+                    <input type="number" id="knapsack-capacity" value="50" class="input-field block w-full">
+                </div>
+            </div>
+            <div id="input-error" class="mt-2 text-xs text-red-500"></div>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-btn" class="btn btn-primary">Start</button>
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="speed-slider" class="mr-2 label-text">Speed:</label>
+                    <input type="range" id="speed-slider" min="50" max="1500" value="500" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">500ms</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Path Visualization Section -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">Current Exploration Path</h3>
+            <div id="path-visualization-area" class="path-visualization">
+                <p class="text-slate-400 text-sm">Exploration path will be shown here.</p>
+            </div>
+        </section>
+
+        <!-- Current Best Solution and Log -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Current Best Solution</h3>
+                <p id="best-value-output" class="text-slate-700 text-sm">Value: <span class="font-semibold">-</span></p>
+                <p id="best-weight-output" class="text-slate-700 text-sm">Weight: <span class="font-semibold">-</span></p>
+                <p id="best-items-output" class="text-slate-700 text-sm">Items (IDs): <span class="font-semibold">-</span></p>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; Knapsack Backtracking Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const weightsInput = document.getElementById('item-weights');
+        const valuesInput = document.getElementById('item-values');
+        const capacityInput = document.getElementById('knapsack-capacity');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValueSpan = document.getElementById('speed-value');
+        const pathVisualizationArea = document.getElementById('path-visualization-area');
+        const logArea = document.getElementById('log-area');
+        
+        const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
+        const bestWeightOutput = document.getElementById('best-weight-output').querySelector('span');
+        const bestItemsOutput = document.getElementById('best-items-output').querySelector('span');
+        const inputError = document.getElementById('input-error');
+
+        let items = []; // { id, weight, value }
+        let W_capacity = 0;
+        let N_items = 0;
+        
+        let animationSpeed = 500;
+        let isSolving = false;
+        let isPaused = false;
+        let autoplayIntervalId = null;
+        
+        let globalBest = { value: 0, weight: 0, selection: [] }; // Stores original_indices
+        let currentPath = []; // Stores { item_index (original_index), taken (boolean), backtracked (boolean) }
+        let explorationStack = []; // { index (current item index in items array to decide), current_weight, current_value, path_taken_so_far }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function validateAndParseInputs() {
+            const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const capStr = capacityInput.value;
+
+            if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
+                inputError.textContent = "Error: All parameters required.";
+                return false;
+            }
+            if (weightsStr.length !== valuesStr.length) {
+                inputError.textContent = "Error: Item weights and values must have the same count.";
+                return false;
+            }
+             if (weightsStr.length > 10) { 
+                inputError.textContent = "Error: Max 10 items for backtracking visualization for performance reasons.";
+                return false;
+            }
+
+            items = [];
+            try {
+                const parsedWeights = weightsStr.map(Number);
+                const parsedValues = valuesStr.map(Number);
+                W_capacity = parseInt(capStr);
+
+                if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
+                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                    return false;
+                }
+                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
+                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                    return false;
+                }
+
+                for (let i = 0; i < parsedWeights.length; i++) {
+                    items.push({
+                        id: i + 1, 
+                        original_index: i,
+                        weight: parsedWeights[i],
+                        value: parsedValues[i]
+                    });
+                }
+                N_items = items.length;
+            } catch (e) {
+                inputError.textContent = "Error: Input parsing failed.";
+                return false;
+            }
+            
+            inputError.textContent = "";
+            return true;
+        }
+        
+        function renderCurrentPath() {
+            pathVisualizationArea.innerHTML = '';
+            if (explorationStack.length === 0 && currentPath.length === 0 && !isSolving) { // Show placeholder only if not solving
+                 pathVisualizationArea.innerHTML = '<p class="text-slate-400 text-sm">Exploration path will be shown here.</p>';
+                 return;
+            }
+            
+            currentPath.forEach(decisionNode => {
+                const item = items[decisionNode.item_index]; // item_index is original_index
+                if (!item) return; // Should not happen
+                const nodeEl = document.createElement('span');
+                nodeEl.className = 'path-node';
+                let decisionText = `I${item.id}: `;
+                if (decisionNode.taken) {
+                    nodeEl.classList.add('included');
+                    decisionText += 'IN';
+                } else {
+                    nodeEl.classList.add('excluded');
+                    decisionText += 'OUT';
+                }
+                if (decisionNode.backtracked) {
+                     nodeEl.classList.add('backtracked');
+                }
+                nodeEl.textContent = decisionText;
+                pathVisualizationArea.appendChild(nodeEl);
+                 if (pathVisualizationArea.childNodes.length > 0) { // Add arrow if not the first element
+                    pathVisualizationArea.appendChild(document.createTextNode(' → '));
+                 }
+            });
+
+            if (explorationStack.length > 0) {
+                const topStack = explorationStack[explorationStack.length - 1];
+                 if (topStack.index < N_items) { 
+                    const item = items[topStack.index];
+                    const nodeEl = document.createElement('span');
+                    nodeEl.className = 'path-node current-decision';
+                    nodeEl.textContent = `Deciding I${item.id}...`;
+                    if (pathVisualizationArea.childNodes.length > 0 && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
+                         // No extra arrow if last was already an arrow
+                    } else if (pathVisualizationArea.childNodes.length > 0) {
+                        pathVisualizationArea.appendChild(document.createTextNode(' → '));
+                    }
+                    pathVisualizationArea.appendChild(nodeEl);
+                }
+            } else if (isSolving && N_items > 0 && currentPath.length === N_items){ 
+                 if (pathVisualizationArea.lastChild && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
+                    pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); // Remove trailing arrow
+                 }
+                 const nodeEl = document.createElement('span');
+                 nodeEl.className = 'path-node';
+                 nodeEl.textContent = "Leaf";
+                 pathVisualizationArea.appendChild(document.createTextNode(' → '));
+                 pathVisualizationArea.appendChild(nodeEl);
+            } else if (pathVisualizationArea.lastChild && pathVisualizationArea.lastChild.nodeType === Node.TEXT_NODE && pathVisualizationArea.lastChild.textContent.trim() === '→') {
+                 pathVisualizationArea.removeChild(pathVisualizationArea.lastChild); // Clean up trailing arrow if any
+            }
+        }
+
+
+        function updateBestSolutionDisplay() {
+            bestValueOutput.textContent = globalBest.value.toFixed(1);
+            bestWeightOutput.textContent = globalBest.weight.toFixed(1);
+            const itemIds = globalBest.selection.map(idx => items[idx].id).join(', ');
+            bestItemsOutput.textContent = itemIds || "None";
+        }
+
+        async function backtrackStep() {
+            if (explorationStack.length === 0) {
+                addLog("Exploration complete.");
+                finalizeSolution_Backtracking();
+                return false; 
+            }
+
+            const currentState = explorationStack.pop();
+            let { index, current_weight, current_value, path_taken } = currentState;
+            
+            currentPath = [...path_taken]; 
+            const itemForLog = index < N_items ? items[index].id : 'End';
+            addLog(`Pop state: Trying item ${itemForLog} (idx ${index}), W:${current_weight.toFixed(1)}, V:${current_value.toFixed(1)}, Path:[${path_taken.map(d => `I${items[d.item_index].id}${d.taken?':IN':':OUT'}`).join(',')}]`);
+            renderCurrentPath(); 
+
+            if (index === N_items) { 
+                addLog(`  Leaf node reached. Value: ${current_value}, Weight: ${current_weight}`);
+                if (current_value > globalBest.value) {
+                    globalBest.value = current_value;
+                    globalBest.weight = current_weight;
+                    globalBest.selection = path_taken.filter(d => d.taken).map(d => d.item_index);
+                    addLog(`    NEW BEST! Value: ${globalBest.value.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',')}]`);
+                    updateBestSolutionDisplay();
+                }
+                await sleep(animationSpeed);
+                if(currentPath.length > 0) currentPath[currentPath.length-1].backtracked = true; 
+                renderCurrentPath();
+                return true; 
+            }
+            
+            const item = items[index];
+            addLog(`  Considering Item ${item.id} (W:${item.weight}, V:${item.value})`);
+            // Display "Deciding Item..." after popping, which renderCurrentPath does if stack is not empty before next push
+            renderCurrentPath(); // Re-render to show "Deciding..." if applicable
+            await sleep(animationSpeed/2);
+
+            // Option 1: Exclude the current item (pushed first to be processed last in DFS)
+            addLog(`    Branch 1: Exclude Item ${item.id}`);
+            explorationStack.push({ 
+                index: index + 1, 
+                current_weight: current_weight, 
+                current_value: current_value, 
+                path_taken: [...path_taken, {item_index: index, taken: false, backtracked: false}] 
+            });
+            
+            // Option 2: Include the current item (if it fits)
+            if (current_weight + item.weight <= W_capacity) {
+                addLog(`    Branch 2: Include Item ${item.id} (New W:${(current_weight + item.weight).toFixed(1)} <= ${W_capacity})`);
+                 explorationStack.push({ 
+                    index: index + 1, 
+                    current_weight: current_weight + item.weight, 
+                    current_value: current_value + item.value,
+                    path_taken: [...path_taken, {item_index: index, taken: true, backtracked: false}] 
+                });
+            } else {
+                addLog(`    Branch 2: Skip Include Item ${item.id} (New W:${(current_weight + item.weight).toFixed(1)} > ${W_capacity}) - Pruning.`);
+            }
+            
+            await sleep(animationSpeed);
+            return true; 
+        }
+
+
+        function initializeAlgorithmState() {
+            if (!validateAndParseInputs()) return false;
+
+            globalBest = { value: 0, weight: 0, selection: [] }; 
+            currentPath = [];
+            explorationStack = []; 
+            
+            explorationStack.push({ index: 0, current_weight: 0, current_value: 0, path_taken: [] });
+
+            logArea.innerHTML = '';
+            addLog("--- Starting 0/1 Knapsack (Backtracking) ---");
+            updateBestSolutionDisplay();
+            renderCurrentPath();
+            return true;
+        }
+
+        function startExecution_Backtracking() {
+            if (isSolving) return; // Prevent multiple starts if already solving
+            if (!initializeAlgorithmState()) return;
+
+            isSolving = true;
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true; 
+            autoBtn.disabled = true; 
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+
+            startAutoplay_Backtracking();
+        }
+
+        function startAutoplay_Backtracking() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false;
+
+            addLog("Autoplay started...");
+            
+            autoplayIntervalId = setInterval(async () => {
+                try {
+                    if (isPaused) return; 
+                    const moreSteps = await backtrackStep();
+                    if (!moreSteps) { 
+                        pauseAutoplay_Backtracking(true); 
+                    }
+                } catch (e) {
+                     console.error("Error in Backtracking autoplay:", e);
+                     addLog("RUNTIME ERROR in autoplay: " + e.message);
+                     if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+                     finalizeSolution_Backtracking(); 
+                }
+            }, animationSpeed); 
+        }
+
+        function pauseAutoplay_Backtracking(finishedNaturally = false) {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isPaused = true;
+
+            if (!finishedNaturally) {
+                addLog("--- Autoplay Paused ---");
+            }
+
+            if (isSolving) { 
+                startBtn.disabled = true;
+                stepBtn.disabled = explorationStack.length === 0;
+                autoBtn.disabled = explorationStack.length === 0;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+            }
+             if (finishedNaturally && explorationStack.length === 0) { 
+                finalizeSolution_Backtracking();
+            }
+        }
+        
+        function finalizeSolution_Backtracking() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            
+            addLog("--- Backtracking Search Finished ---");
+            addLog(`Final Best Solution - Value: ${globalBest.value.toFixed(1)}, Weight: ${globalBest.weight.toFixed(1)}, Items: [${globalBest.selection.map(idx => items[idx].id).join(',') || 'None'}]`);
+            updateBestSolutionDisplay(); 
+            
+            currentPath = globalBest.selection.map(idx => ({item_index: idx, taken: true, backtracked: true})); 
+            renderCurrentPath();
+
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        function resetAll() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            explorationStack = [];
+            currentPath = [];
+
+            weightsInput.value = "10,20,30"; 
+            valuesInput.value = "60,100,120"; 
+            capacityInput.value = "50";    
+
+            speedSlider.value = "500"; 
+            animationSpeed = 500; 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+
+            if(inputError) inputError.textContent = ""; 
+            pathVisualizationArea.innerHTML = '<p class="text-slate-400 text-sm">Exploration path will be shown here.</p>';
+
+            logArea.innerHTML = ''; 
+            addLog("Log messages will appear here..."); 
+            
+            bestValueOutput.textContent = "-";
+            bestWeightOutput.textContent = "-";
+            bestItemsOutput.textContent = "-";
+
+            items = [];
+            W_capacity = 0;
+            N_items = 0;
+            globalBest = { value: 0, weight: 0, selection: [] };
+
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        // Event Listeners
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value); 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        startBtn.addEventListener('click', startExecution_Backtracking);
+        
+        stepBtn.addEventListener('click', async () => {
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                isPaused = true; 
+                addLog("Initialized for stepping. Click Step to proceed.");
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                renderCurrentPath(); 
+                return;
+            }
+
+            if (isSolving && isPaused) { 
+                 const moreSteps = await backtrackStep();
+                 if (!moreSteps) { 
+                    // Finalize is called by backtrackStep if it returns false
+                 } else { 
+                    stepBtn.disabled = false; 
+                    autoBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                 }
+            }
+        });
+
+        autoBtn.addEventListener('click', () => { 
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                startAutoplay_Backtracking();
+            } else if (isSolving && isPaused) { 
+                startAutoplay_Backtracking();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            if (isSolving && !isPaused) {
+                pauseAutoplay_Backtracking();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetAll);
+        
+        // Initial call
+        resetAll();
+
+    </script>
+</body>
+</html>

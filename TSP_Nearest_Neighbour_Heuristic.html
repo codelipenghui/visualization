@@ -75,7 +75,7 @@
             cursor: not-allowed;
         }
          .btn-danger {
-            background-color: #475569; /* slate-600, was red-500, adjusted for monochrome */
+            background-color: #475569; /* slate-600 */
             color: white;
             border-color: #475569;
         }
@@ -87,7 +87,7 @@
         #tsp-canvas {
             border: 1px solid #e2e8f0; /* slate-200 */
             cursor: crosshair;
-            background-color: #f8fafc; /* slate-50, same as body for grid visibility */
+            background-color: #f8fafc; /* slate-50 */
             border-radius: 0.375rem; /* rounded-md */
         }
         .log-area {
@@ -142,11 +142,11 @@
         <section id="controls-section" class="mb-6">
             <h2 class="section-title">Solver Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
-                <button id="start-tsp-btn" class="btn btn-primary">Start</button>
-                <button id="step-tsp-btn" class="btn btn-secondary" disabled>Step</button>
-                <button id="auto-tsp-btn" class="btn btn-secondary" disabled>Auto</button> 
-                <button id="pause-tsp-btn" class="btn btn-secondary" disabled>Pause</button>
-                <button id="reset-tsp-btn" class="btn btn-danger">Reset</button>
+                <button id="start-btn" class="btn btn-primary">Start</button> 
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button> 
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button>  
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button> 
+                <button id="reset-btn" class="btn btn-danger">Reset</button> 
                  <div class="flex items-center md:ml-auto mt-2 md:mt-0">
                     <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
                     <input type="range" id="tsp-speed-slider" min="50" max="1000" value="300" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
@@ -186,13 +186,12 @@
         const ctx = canvas.getContext('2d');
         const numCitiesInput = document.getElementById('num-cities');
         const generateCitiesBtn = document.getElementById('generate-cities-btn');
-        // const clearCitiesBtn = document.getElementById('clear-cities-btn'); // Removed
         
-        const startTspBtn = document.getElementById('start-tsp-btn');
-        const stepTspBtn = document.getElementById('step-tsp-btn');
-        const autoTspBtn = document.getElementById('auto-tsp-btn');
-        const pauseTspBtn = document.getElementById('pause-tsp-btn');
-        const resetTspBtn = document.getElementById('reset-tsp-btn');
+        const startBtn = document.getElementById('start-btn'); 
+        const stepBtn = document.getElementById('step-btn');   
+        const autoBtn = document.getElementById('auto-btn');     
+        const pauseBtn = document.getElementById('pause-btn');   
+        const resetBtn = document.getElementById('reset-btn'); 
         
         const speedSlider = document.getElementById('tsp-speed-slider');
         const speedValueSpan = document.getElementById('tsp-speed-value');
@@ -200,14 +199,20 @@
         const pathOutput = document.getElementById('tsp-path-output').querySelector('span');
         const distanceOutput = document.getElementById('tsp-distance-output').querySelector('span');
 
-        let cities = []; // Array of {x, y, id}
-        let tour = [];
+        let cities = []; 
+        let tour = []; // Stores indices of cities in the tour
         let totalDistance = 0;
-        let isSolvingTSP = false;
-        let isPausedTSP = false; 
+        
+        let isSolving = false; 
+        let isPaused = false; 
         let animationSpeed = 300;
         let cityIdCounter = 0;
-        let currentTspSolveController = null; 
+        
+        let currentCityIndex_TSP; // For TSP state
+        let visited_TSP_Map; // Map for O(1) lookup: city_index -> boolean
+        let tsp_step_count; // How many cities added to tour so far
+        let autoplayIntervalId_TSP = null;
+
 
         const CITY_RADIUS = 6; 
         const GRID_SPACING = 50;
@@ -263,27 +268,28 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid(); 
 
-            cities.forEach((city) => {
+            cities.forEach((city, index) => { // Use index directly
                 ctx.beginPath();
                 ctx.arc(city.x, city.y, CITY_RADIUS, 0, Math.PI * 2);
 
                 let fillColor = CITY_COLOR_UNVISITED;
-                let textColor = CITY_TEXT_UNVISITED;
+                let textColor = CITY_TEXT_UNVISITED; // Default for unvisited
                 let strokeStyle = null; 
                 
-                const isStartCityInTour = tour.length > 0 && city.id === cities[tour[0]].id;
+                const isStartCity = index === tour[0]; // Check if this city is the start of the current tour
                 
-                if (isStartCityInTour) {
+                if (isStartCity && visited_TSP_Map && visited_TSP_Map.has(index)) { // Visited start city
                     fillColor = CITY_COLOR_START;
                     textColor = CITY_TEXT_START;
                     strokeStyle = CITY_BORDER_START;
-                } else if (city.isCurrent) {
+                } else if (index === currentCityIndex_TSP) { // Current city in processing
                     fillColor = CITY_COLOR_CURRENT;
                     textColor = CITY_TEXT_CURRENT;
-                } else if (city.visited) {
+                } else if (visited_TSP_Map && visited_TSP_Map.has(index)) { // Other visited cities
                     fillColor = CITY_COLOR_VISITED;
                     textColor = CITY_TEXT_VISITED;
                 }
+                // Else, it's unvisited, uses default unvisited colors.
                 
                 ctx.fillStyle = fillColor;
                 ctx.fill();
@@ -301,33 +307,35 @@
             });
         }
 
-        function drawTour(tempPath = null) {
-            drawCities(); 
-            if (tour.length < 2 && !tempPath) return;
-
-            const path_to_draw = tempPath || tour;
-            if (path_to_draw.length < 2 || !cities[path_to_draw[0]]) return; 
+        function drawCurrentTourPath() { 
+            if (tour.length < 2) return;
 
             ctx.strokeStyle = PATH_COLOR_DEFAULT;
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.moveTo(cities[path_to_draw[0]].x, cities[path_to_draw[0]].y);
-            for (let i = 1; i < path_to_draw.length; i++) {
-                if (cities[path_to_draw[i]]) { 
-                    ctx.lineTo(cities[path_to_draw[i]].x, cities[path_to_draw[i]].y);
+            ctx.moveTo(cities[tour[0]].x, cities[tour[0]].y);
+            for (let i = 1; i < tour.length; i++) {
+                if (cities[tour[i]]) { 
+                    ctx.lineTo(cities[tour[i]].x, cities[tour[i]].y);
                 }
             }
             ctx.stroke();
 
-            if (!tempPath && tour.length === cities.length && tour.length > 0 && cities[tour[0]]) { 
+            // If it's the final tour (all cities visited), draw return to start
+            if (tsp_step_count >= cities.length && tour.length > 0 && cities[tour[0]]) { 
                  ctx.lineTo(cities[tour[0]].x, cities[tour[0]].y);
                  ctx.stroke();
             }
         }
+
+        function redrawCanvasWithCurrentTour() {
+            drawCities();
+            drawCurrentTourPath();
+        }
         
         function highlightSegment(cityIndex1, cityIndex2) {
             if (cityIndex1 === undefined || cityIndex2 === undefined || !cities[cityIndex1] || !cities[cityIndex2]) return;
-            drawTour(); 
+            redrawCanvasWithCurrentTour(); // Redraw existing cities and tour path
             ctx.strokeStyle = PATH_COLOR_HIGHLIGHT;
             ctx.lineWidth = 2; 
             ctx.beginPath();
@@ -337,17 +345,17 @@
         }
 
         canvas.addEventListener('click', (event) => {
-            if (isSolvingTSP) return;
+            if (isSolving) return;
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
-            cities.push({ x, y, id: ++cityIdCounter, visited: false, isCurrent: false });
-            drawCities();
+            cities.push({ x, y, id: ++cityIdCounter }); // Removed visited, isCurrent from here
+            drawCities(); // Just draw cities, no tour yet
             addLog(`Added city ${cityIdCounter} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
         });
 
         generateCitiesBtn.addEventListener('click', () => {
-            if (isSolvingTSP) return;
+            if (isSolving) return;
             cities = [];
             cityIdCounter = 0;
             const num = parseInt(numCitiesInput.value);
@@ -355,224 +363,279 @@
                 cities.push({
                     x: Math.random() * (canvas.width - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5), 
                     y: Math.random() * (canvas.height - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5),
-                    id: ++cityIdCounter,
-                    visited: false,
-                    isCurrent: false
+                    id: ++cityIdCounter
                 });
             }
+            resetSolutionFull(false); // Reset solution but not cities
             drawCities();
             addLog(`Generated ${num} random cities.`);
-            resetSolutionUI();
         });
-
-        // clearCitiesBtn.addEventListener('click', () => { // Removed
-        //     if (isSolvingTSP) return;
-        //     cities = [];
-        //     cityIdCounter = 0;
-        //     drawCities();
-        //     addLog("Cleared all cities.");
-        //     resetSolutionUI();
-        // });
         
-        resetTspBtn.addEventListener('click', resetSolutionFull);
+        resetBtn.addEventListener('click', () => resetSolutionFull(true));
 
         speedSlider.addEventListener('input', (e) => {
             animationSpeed = parseInt(e.target.value);
             speedValueSpan.textContent = `${animationSpeed}ms`;
         });
         
-        function resetSolutionUI(){ // Resets visuals of a solution, keeps cities
+        function initializeTSPState() {
             tour = [];
             totalDistance = 0;
-            cities.forEach(c => { c.visited = false; c.isCurrent = false; });
+            visited_TSP_Map = new Map();
+            tsp_step_count = 0;
+
+            if (cities.length === 0) return false;
+
+            currentCityIndex_TSP = 0; // Start with the first city (index 0)
+            visited_TSP_Map.set(currentCityIndex_TSP, true);
+            tour.push(currentCityIndex_TSP);
+            tsp_step_count = 1;
+            
             pathOutput.textContent = "-";
             distanceOutput.textContent = "-";
-            drawCities(); 
+            logArea.innerHTML = '';
+            addLog(`TSP Initialized. Starting at City ${cities[currentCityIndex_TSP].id}.`);
+            redrawCanvasWithCurrentTour();
+            return true;
         }
 
-        function resetSolutionFull() { // Full reset including cities and logs
-            if (currentTspSolveController) {
-                currentTspSolveController.abort(); 
+
+        function resetSolutionUI(){ 
+            tour = [];
+            totalDistance = 0;
+             if (cities) { // Only if cities exist
+                cities.forEach(c => { 
+                    if(c) { // Check if city object itself is defined
+                        c.visited = false; 
+                        c.isCurrent = false;
+                    }
+                });
             }
-            isSolvingTSP = false;
-            isPausedTSP = false;
+            currentCityIndex_TSP = undefined;
+            visited_TSP_Map = new Map();
+            tsp_step_count = 0;
+
+            pathOutput.textContent = "-";
+            distanceOutput.textContent = "-";
+            redrawCanvasWithCurrentTour();
+        }
+
+        function resetSolutionFull(clearCityData = true) { 
+            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
+            autoplayIntervalId_TSP = null;
             
-            cities = []; 
-            cityIdCounter = 0;
+            isSolving = false;
+            isPaused = false;
+            
+            if(clearCityData){
+                cities = []; 
+                cityIdCounter = 0;
+            }
             resetSolutionUI(); 
 
-            logArea.innerHTML = '<p class="text-slate-400">Log messages will appear here...</p>'; 
-            addLog("System reset. Add or generate cities.");
+            if(clearCityData) {
+                 logArea.innerHTML = '<p class="text-slate-400">Log messages will appear here...</p>'; 
+                 addLog("System reset. Add or generate cities.");
+            }
 
-            startTspBtn.disabled = false;
+
+            startBtn.disabled = false;
             generateCitiesBtn.disabled = false;
-            // clearCitiesBtn.disabled = false; // Removed
-            stepTspBtn.disabled = true;
-            autoTspBtn.disabled = true;
-            pauseTspBtn.disabled = true;
-            resetTspBtn.disabled = false; 
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false; 
         }
         
-        function distance(city1, city2) {
+        function distance(cityIdx1, cityIdx2) {
+            const city1 = cities[cityIdx1];
+            const city2 = cities[cityIdx2];
             if (!city1 || !city2) return Infinity;
             const dx = city1.x - city2.x;
             const dy = city1.y - city2.y;
             return Math.sqrt(dx * dx + dy * dy);
         }
+        
+        async function processSingleTSPStep() {
+            if (tsp_step_count >= cities.length) { // All cities visited
+                if (cities.length > 0 && !visited_TSP_Map.has(tour[0])) { // Ensure not already finalized
+                    // Final step: return to start
+                    const lastCityInTourIdx = tour[tour.length - 1];
+                    const distToStart = distance(lastCityInTourIdx, tour[0]);
+                    
+                    highlightSegment(lastCityInTourIdx, tour[0]);
+                    await sleep(animationSpeed);
 
-        async function solveTSPAlgorithm(signal) { 
-            resetSolutionUI(); 
+                    totalDistance += distToStart;
+                    visited_TSP_Map.set(tour[0], true); // Mark start as "re-visited" to complete tour
+                    
+                    addLog(`Returning to start City ${cities[tour[0]].id}. Dist: ${distToStart.toFixed(2)}. Tour complete.`);
+                    if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = false;
+                    currentCityIndex_TSP = tour[0]; // Back to start
+                    redrawCanvasWithCurrentTour();
+                }
+                finalizeTSPSolution();
+                return false; // No more steps
+            }
 
-            addLog(`Starting TSP solver with ${cities.length} cities...`);
+            let nearestCityIndex = -1;
+            let minDist = Infinity;
 
-            let currentCityIndex = 0; 
-            cities[currentCityIndex].visited = true;
-            cities[currentCityIndex].isCurrent = true;
-            tour.push(currentCityIndex); 
-            
-            drawCities(); 
-            await sleep(animationSpeed);
-            if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
+            addLog(`Current city: ${cities[currentCityIndex_TSP].id}. Finding nearest unvisited...`);
 
-
-            for (let count = 1; count < cities.length; count++) {
-                if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
-                
-                let nearestCityIndex = -1;
-                let minDist = Infinity;
-
-                addLog(`Current city: ${cities[currentCityIndex].id}. Finding nearest...`);
-
-                for (let i = 0; i < cities.length; i++) {
-                    if (!cities[i].visited) {
-                        const d = distance(cities[currentCityIndex], cities[i]);
-                        if (d < minDist) {
-                            minDist = d;
-                            nearestCityIndex = i;
-                        }
+            for (let i = 0; i < cities.length; i++) {
+                if (!visited_TSP_Map.has(i)) {
+                    const d = distance(currentCityIndex_TSP, i);
+                    if (d < minDist) {
+                        minDist = d;
+                        nearestCityIndex = i;
                     }
                 }
-                
-                if (nearestCityIndex !== -1) {
-                    highlightSegment(currentCityIndex, nearestCityIndex);
-                    await sleep(animationSpeed);
-                    if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
-
-
-                    totalDistance += minDist;
-                    cities[currentCityIndex].isCurrent = false; 
-                    
-                    currentCityIndex = nearestCityIndex;
-                    cities[currentCityIndex].visited = true;
-                    cities[currentCityIndex].isCurrent = true;
-                    tour.push(currentCityIndex);
-                    
-                    addLog(`Nearest: City ${cities[currentCityIndex].id}. Dist: ${minDist.toFixed(2)}. Path: ${tour.map(idx => cities[idx].id).join('->')}`);
-                    drawTour(); 
-                    await sleep(animationSpeed);
-                } else {
-                     addLog("Error: No unvisited city found.");
-                     break; 
-                }
-            }
-            if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped before completing tour."); return; }
-
-
-            if (tour.length > 0 && cities[currentCityIndex] && cities[tour[0]]) {
-                const distToStart = distance(cities[currentCityIndex], cities[tour[0]]);
-                highlightSegment(currentCityIndex, tour[0]);
-                await sleep(animationSpeed);
-                if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
-
-                totalDistance += distToStart;
-                addLog(`Returning to start city ${cities[tour[0]].id}. Dist: ${distToStart.toFixed(2)}.`);
             }
             
-            if (cities[currentCityIndex]) cities[currentCityIndex].isCurrent = false; 
-            drawTour(); 
+            if (nearestCityIndex !== -1) {
+                highlightSegment(currentCityIndex_TSP, nearestCityIndex);
+                await sleep(animationSpeed);
+
+                totalDistance += minDist;
+                if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = false; 
+                
+                currentCityIndex_TSP = nearestCityIndex;
+                visited_TSP_Map.set(currentCityIndex_TSP, true);
+                if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = true;
+                tour.push(currentCityIndex_TSP);
+                tsp_step_count++;
+                
+                addLog(`Nearest: City ${cities[currentCityIndex_TSP].id}. Dist: ${minDist.toFixed(2)}. Path: ${tour.map(idx => cities[idx].id).join('->')}`);
+                redrawCanvasWithCurrentTour(); 
+            } else {
+                 addLog("No unvisited city found, but not all cities visited. This indicates an issue or premature end.");
+                 finalizeTSPSolution(); // Should not happen if logic is correct
+                 return false;
+            }
+            return true; // More steps possible
+        }
+
+
+        function startAutoplay_TSP() {
+            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP); // Clear existing
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false;
+            generateCitiesBtn.disabled = true;
+
+            addLog("Autoplay started...");
+            
+            autoplayIntervalId_TSP = setInterval(async () => {
+                if (isPaused) return; // Handled by pause button
+                
+                const moreSteps = await processSingleTSPStep();
+                if (!moreSteps) {
+                    pauseAutoplay_TSP(true); // Pass true to indicate it finished naturally
+                }
+            }, animationSpeed * 1.1);
+        }
+
+        function pauseAutoplay_TSP(finishedNaturally = false) {
+            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
+            autoplayIntervalId_TSP = null;
+            isPaused = true;
+
+            if (!finishedNaturally) {
+                addLog("Autoplay paused by user.");
+            }
+
+            if (isSolving) { // Only enable Step/Auto if solving was in progress
+                startBtn.disabled = true; // Start is disabled until reset
+                stepBtn.disabled = tsp_step_count >= cities.length && cities.length > 0; // Disable if tour complete
+                autoBtn.disabled = tsp_step_count >= cities.length && cities.length > 0;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                generateCitiesBtn.disabled = true; // Keep disabled if paused mid-solve
+            }
+        }
+        
+        function finalizeTSPSolution() {
+            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
+            autoplayIntervalId_TSP = null;
+            isSolving = false;
+            isPaused = false; 
 
             pathOutput.textContent = tour.map(idx => cities[idx].id).join(' -> ') + (tour.length > 0 && cities[tour[0]] ? ` -> ${cities[tour[0]].id}` : "");
             distanceOutput.textContent = totalDistance.toFixed(2);
-            addLog(`TSP solution found. Total distance: ${totalDistance.toFixed(2)}`);
+            if (tour.length > 0) { // Only log if a tour was actually formed
+                addLog(`TSP solution found. Total distance: ${totalDistance.toFixed(2)}`);
+            } else if (cities.length > 0) {
+                addLog("TSP could not be completed (e.g. single city).");
+            }
+
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+            generateCitiesBtn.disabled = false;
         }
 
-        async function startTSPExecution() {
-            if (isSolvingTSP) return; 
+        startBtn.addEventListener('click', () => {
+            if (isSolving) return;
             if (cities.length < 2) {
                 addLog("Add at least 2 cities to solve.");
                 return;
             }
-            
-            isSolvingTSP = true;
-            isPausedTSP = false; 
-            if (currentTspSolveController) { 
-                currentTspSolveController.abort();
-            }
-            currentTspSolveController = new AbortController(); 
-            const signal = currentTspSolveController.signal;
-
-            startTspBtn.disabled = true;
-            stepTspBtn.disabled = true; 
-            autoTspBtn.disabled = true;  
-            pauseTspBtn.disabled = false;
-            resetTspBtn.disabled = false; 
-            generateCitiesBtn.disabled = true;
-            // clearCitiesBtn.disabled = true; // Removed
-
-            try {
-                await solveTSPAlgorithm(signal);
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    addLog("TSP Solving aborted by reset or new start.");
-                } else {
-                    addLog("An error occurred during TSP solving: " + error.message);
-                    console.error(error);
-                }
-            } finally {
-                if (!signal.aborted) { 
-                    if(isPausedTSP){ 
-                         addLog("TSP Solving stopped by user via Pause.");
-                         startTspBtn.disabled = false;
-                         stepTspBtn.disabled = false; 
-                         autoTspBtn.disabled = false;
-                         pauseTspBtn.disabled = true;
-                    } else { 
-                         isSolvingTSP = false; 
-                         startTspBtn.disabled = false;
-                         stepTspBtn.disabled = true;
-                         autoTspBtn.disabled = true;
-                         pauseTspBtn.disabled = true;
-                    }
-                }
-                if (!isSolvingTSP) { 
-                    generateCitiesBtn.disabled = false;
-                    // clearCitiesBtn.disabled = false; // Removed
-                }
-            }
-        }
-
-        startTspBtn.addEventListener('click', startTSPExecution);
+            isSolving = true;
+            initializeTSPState();
+            startAutoplay_TSP();
+        });
         
-        pauseTspBtn.addEventListener('click', () => {
-            if (isSolvingTSP && !isPausedTSP) {
-                isPausedTSP = true; 
-                addLog("Pause requested. Current TSP process will stop at the next check.");
-                pauseTspBtn.disabled = true; 
+        pauseBtn.addEventListener('click', () => {
+            if (isSolving && !isPaused) {
+                pauseAutoplay_TSP();
             }
         });
 
-        stepTspBtn.addEventListener('click', () => {
-            addLog("'Step' functionality for TSP currently restarts the process. Click 'Start' or 'Auto' for full run.");
-            if(isPausedTSP || !isSolvingTSP){
-                startTSPExecution();
+        stepBtn.addEventListener('click', async () => {
+            if (!isSolving) { // If not solving, start it (paused initially for step)
+                if (cities.length < 2) { addLog("Add at least 2 cities."); return; }
+                isSolving = true;
+                isPaused = true; // Start in paused state for stepping
+                initializeTSPState();
+                addLog("Initialized for stepping. Click Step to proceed.");
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                generateCitiesBtn.disabled = true;
+                return; // Wait for next step click
+            }
+
+            if (isSolving && isPaused) { // If paused and solving, perform one step
+                 const moreSteps = await processSingleTSPStep();
+                 if (!moreSteps) { // No more steps means it finished
+                    // Finalize is called by processSingleTSPStep if it returns false
+                 } else { // Still more steps, keep controls for paused stepping
+                    stepBtn.disabled = false;
+                    autoBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                 }
             }
         });
 
-        autoTspBtn.addEventListener('click', () => {
-             addLog("'Auto' functionality currently restarts the process. Click 'Start' for full run.");
-            if(isPausedTSP || !isSolvingTSP){
-                 startTSPExecution();
-            }
+        autoBtn.addEventListener('click', () => {
+             if (!isSolving) { // If not solving, effectively like Start
+                if (cities.length < 2) { addLog("Add at least 2 cities."); return; }
+                isSolving = true;
+                initializeTSPState();
+                startAutoplay_TSP();
+             } else if (isSolving && isPaused) { // If paused, resume autoplay
+                 startAutoplay_TSP();
+             }
         });
 
 

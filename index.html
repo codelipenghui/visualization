@@ -15,15 +15,33 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll when sidebar animates */
         }
         .page-header {
             background-color: #ffffff;
-            padding: 15px 30px;
+            padding: 10px 20px; /* Adjusted padding */
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border-bottom: 1px solid #dee2e6;
             text-align: left;
             display: flex;
             align-items: center;
+            position: relative; /* For z-index if needed */
+            z-index: 100; /* Ensure header is above other content */
+        }
+        #sidebar-toggle {
+            background: none;
+            border: none;
+            padding: 5px;
+            margin-right: 15px; /* Space between toggle and logo */
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sidebar-toggle svg {
+            width: 24px; /* Size of hamburger icon */
+            height: 24px;
+            fill: #343a40; /* Color of hamburger icon */
         }
         .logo-container {
             display: inline-flex;
@@ -43,27 +61,43 @@
             gap: 20px;
             max-width: 100%;
             box-sizing: border-box;
+            transition: gap 0.3s ease; /* Transition for gap change */
         }
+        .main-content-area.sidebar-collapsed {
+            gap: 0; /* Remove gap when sidebar is collapsed */
+        }
+
         .left-column {
             width: 260px;
-            min-width: 220px;
+            min-width: 260px; /* Set min-width to prevent squishing during animation */
             padding: 20px;
             background-color: #ffffff;
             border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             border: 1px solid #dee2e6;
             overflow-y: auto;
+            overflow-x: hidden; /* Prevent content from showing during collapse */
             height: fit-content;
-            max-height: calc(100vh - 100px);
+            max-height: calc(100vh - 100px); /* Adjust based on header/footer */
+            transition: max-width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, opacity 0.3s ease, border 0.3s ease;
+            opacity: 1;
         }
-        .right-column { /* Updated styles for right column */
+        .left-column.collapsed {
+            max-width: 0 !important;
+            min-width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-left-width: 0 !important;
+            border-right-width: 0 !important;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .right-column {
             flex-grow: 1;
-            /* background-color: #ffffff; Removed white background */
-            /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); Removed shadow */
-            /* border: 1px solid #dee2e6; Removed border */
-            /* padding: 20px; Removed padding, iframe will take full space */
             display: flex;
             flex-direction: column;
+            /* No background/border/shadow here as requested previously */
         }
         h2.category-toggle {
             color: #495057;
@@ -121,6 +155,7 @@
             padding: 10px 12px;
             font-size: 0.85em;
             transition: color 0.2s ease-in-out;
+            white-space: nowrap; /* Prevent text wrapping in links */
         }
         a.visualization-link:hover {
             color: #000000;
@@ -134,48 +169,59 @@
             background-color: #ffffff;
             margin-top: auto;
         }
-        #visualizationFrame { /* Updated styles for iframe */
+        #visualizationFrame {
             width: 100%;
-            height: calc(100vh - 100px); /* Adjusted to fill available height better */
-            /* border: 1px solid #ced4da; Removed border */
-            border: none; /* Explicitly no border */
-            border-radius: 0; /* Removed border-radius */
-            background-color: transparent; /* Make iframe background transparent */
+            height: calc(100vh - 100px);
+            border: none;
+            border-radius: 0;
+            background-color: transparent;
         }
-        .iframe-placeholder { /* Updated styles for placeholder */
+        .iframe-placeholder {
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: calc(100vh - 100px); /* Match iframe height */
-            /* background-color: #f8f9fa; No specific background, will inherit or be transparent */
-            /* border: 1px dashed #ced4da; Removed border */
-            color: #6c757d; /* Keep text color for visibility */
+            height: calc(100vh - 100px);
+            color: #6c757d;
             font-size: 1em;
             flex-grow: 1;
-            padding: 20px; /* Added some padding so text is not at the edges */
+            padding: 20px;
             box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
             .main-content-area {
                 flex-direction: column;
+                /* gap will still be controlled by .sidebar-collapsed */
             }
-            .left-column {
-                width: 100%;
-                min-width: unset;
-                max-height: none;
-                margin-bottom: 20px;
+            /* .left-column doesn't need width:100% here anymore if it's collapsible */
+            /* The collapsed class will hide it effectively */
+             .left-column {
+                width: 100%; /* Ensure it takes full width when not collapsed */
+                min-width: unset; /* Override desktop min-width */
+                max-width: 100%; /* Override desktop max-width */
+                max-height: none; /* No max height in stacked view */
+                /* margin-bottom will be handled by the gap or if it's hidden */
             }
+            .left-column.collapsed {
+                margin-bottom: 0; /* No margin if collapsed and stacked */
+            }
+            .main-content-area.sidebar-collapsed .left-column {
+                 /* If main area has gap:0, and left-column is hidden, no specific margin needed */
+            }
+            .main-content-area:not(.sidebar-collapsed) .left-column {
+                margin-bottom: 20px; /* Add margin when sidebar is visible and stacked */
+            }
+
             .right-column {
                 width: 100%;
-                padding: 0; /* No padding when stacked if iframe takes full width */
+                padding: 0;
             }
             #visualizationFrame, .iframe-placeholder {
-                height: 500px; /* Or a more dynamic height if preferred */
+                height: 500px;
             }
             .page-header {
-                padding: 15px 20px;
+                padding: 10px 15px;
             }
             .logo-text {
                 font-size: 1.4em;
@@ -188,6 +234,13 @@
 </head>
 <body>
     <header class="page-header">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">
+            <svg viewBox="0 0 100 80">
+              <rect width="100" height="15" rx="8"></rect>
+              <rect y="30" width="100" height="15" rx="8"></rect>
+              <rect y="60" width="100" height="15" rx="8"></rect>
+            </svg>
+        </button>
         <div class="logo-container">
             <span class="logo-text">Visualizations</span>
         </div>
@@ -205,6 +258,7 @@
                 <ul>
                     <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_DP_visualization.html">0-1 Knapsack (Dynamic Programming)</a></li>
                     <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_Branch_Bound.html">0-1 Knapsack (Branch and Bound)</a></li>
+                    <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_Backtracking.html">0-1 Knapsack (Backtracking)</a></li>
                     <li><a href="#" class="visualization-link" data-src="Fractional_Knapsack_Greedy.html">Fractional Knapsack (Greedy)</a></li>
                     <li><a href="#" class="visualization-link" data-src="Unbounded_Knapsack.html">Unbounded Knapsack (Dynamic Programming)</a></li>
                 </ul>
@@ -238,7 +292,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Collapsible sections logic
+            const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+            const leftColumn = document.querySelector('.left-column');
+            const mainContentArea = document.querySelector('.main-content-area');
+
+            if (sidebarToggleBtn && leftColumn && mainContentArea) {
+                sidebarToggleBtn.addEventListener('click', function () {
+                    leftColumn.classList.toggle('collapsed');
+                    mainContentArea.classList.toggle('sidebar-collapsed');
+                });
+            }
+
+            // Collapsible sections logic for categories
             const toggles = document.querySelectorAll('.category-toggle');
             toggles.forEach(toggle => {
                 toggle.addEventListener('click', function () {

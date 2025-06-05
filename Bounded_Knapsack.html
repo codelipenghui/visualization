@@ -6,6 +6,7 @@
     <title>Bounded Knapsack Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -13,17 +14,20 @@
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
-        .container-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0; /* slate-200 */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        .main-title {
+            font-size: 2.1rem; 
+        }
+        @media (min-width: 768px) { 
+            .main-title {
+                font-size: 2.5rem; 
+            }
         }
         .section-title {
             color: #334155; /* slate-700 */
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            font-size: 1.125rem;
+            font-size: 0.9rem; 
             font-weight: 600;
         }
         .label-text {
@@ -85,14 +89,23 @@
         .log-area {
             background-color: #f1f5f9; 
             border: 1px solid #e2e8f0; 
-            padding: 0.75rem;
-            min-height: 80px;
+            min-height: 0;
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 200px;
-            overflow-y: auto;
+            max-height: 0; 
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out, padding 0.5s ease-in-out;
+            margin-top: 0;
             border-radius: 0.375rem;
+        }
+        .log-area.expanded {
+            max-height: 250px; 
+            opacity: 1;
+            margin-top: 1rem; 
+            padding: 0.75rem; 
+            overflow-y: auto;
         }
         .log-entry {
             margin-bottom: 0.3em;
@@ -111,6 +124,7 @@
             overflow-x: auto;
             border: 1px solid #e2e8f0;
             border-radius: 0.375rem;
+            background-color: #ffffff;
         }
         .dp-table td, .dp-table th {
             border: 1px solid #e2e8f0; /* slate-200 */
@@ -125,29 +139,30 @@
             color: #475569; /* slate-600 */
             background-color: #f8fafc; /* slate-50 */
             font-weight: 500;
-            position: sticky; /* Sticky headers for item column */
+            position: sticky; 
             left: 0;
             z-index: 1; 
         }
-        .dp-table thead th { /* Ensure header row cells are also sticky */
+        .dp-table thead th { 
             top: 0;
-            z-index: 2; /* Higher z-index for column headers */
+            z-index: 2; 
         }
-
-        .dp-table thead th:first-child { /* Top-left corner cell */
-             z-index: 3; /* Highest z-index */
+        .dp-table thead th:first-child { 
+             z-index: 3; 
         }
-
          .dp-table th span.text-xs { 
             font-size: 0.65rem; 
             color: #64748b; /* slate-500 */
         }
         .highlight-current { 
-            background-color: #e2e8f0 !important; /* slate-200 */
-            color: #1e293b !important; /* slate-800 */
+            background-color: #e2e8f0 !important; 
+            color: #1e293b !important; 
             font-weight: 600;
-            outline: 1px solid #94a3b8; /* slate-400 */
+            outline: 1px solid #94a3b8; 
             outline-offset: -1px;
+        }
+        .highlight-cannot-include {
+            background-color: #f1f5f9 !important;
         }
         .highlight-dependency { 
             background-color: #f0f9ff; /* sky-50 */
@@ -167,41 +182,101 @@
         .text-item-not-taken-in-dp { 
             color: #6b7280; /* gray-500 */
         }
+        .code-visualization {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.75rem; 
+            line-height: 1.6; 
+            max-height: 0; 
+            opacity: 0;
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
+            margin-top: 0;
+        }
+        .code-visualization.expanded {
+            max-height: 70vh; 
+            opacity: 1;
+            margin-top: 1rem; 
+            overflow-y: auto; 
+        }
+        .code-line {
+            padding: 0.15rem 0.5rem; 
+            border-radius: 0.125rem;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre; 
+        }
+        .python-keyword { color: #0ea5e9; }
+        .python-function { color: #2563eb; }
+        .python-parameters { color: #475569; }
+        .python-comment { color: #64748b; font-style: italic; }
+        .python-variable { color: #1e293b; }
+        .python-operator { color: #ec4899; }
+        .python-number { color: #f59e0b; }
+        
+        .highlight-code-active { background-color: #e2e8f0; }
+
+        .collapsible-title {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-title::after {
+            content: '[+]'; 
+            color: #64748b; 
+            font-size: 0.8em;
+            margin-left: 8px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .collapsible-title.expanded::after {
+            content: '[-]'; 
+        }
+        .content-section { 
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
+        }
     </style>
 </head>
 <body>
-    <div class="container mx-auto max-w-5xl container-card p-4 md:p-8 my-8">
+    <div class="container mx-auto px-4 md:px-8 py-8">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">Bounded Knapsack Problem</h1>
+            <h1 class="main-title font-bold text-slate-700">Bounded Knapsack Problem</h1>
             <p class="text-md text-slate-500 mt-1">Dynamic Programming Visualization</p>
         </header>
 
-        <!-- Input Section -->
-        <section id="input-section" class="mb-6">
+        <section id="input-section" class="content-section">
             <h2 class="section-title">Parameters</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label for="item-weights" class="block label-text mb-1">Item Weights (csv):</label>
-                    <input type="text" id="item-weights" value="10,20,30,15,25,5,12,18,22,8" class="input-field block w-full">
+                    <input type="text" id="item-weights" value="10,20,30" class="input-field block w-full">
                 </div>
                 <div>
                     <label for="item-values" class="block label-text mb-1">Item Values (csv):</label>
-                    <input type="text" id="item-values" value="60,100,120,70,110,20,50,75,95,35" class="input-field block w-full">
+                    <input type="text" id="item-values" value="60,100,120" class="input-field block w-full">
                 </div>
                 <div>
                     <label for="item-counts" class="block label-text mb-1">Item Counts (csv):</label>
-                    <input type="text" id="item-counts" value="2,1,3,1,2,5,2,1,1,4" class="input-field block w-full">
+                    <input type="text" id="item-counts" value="1,2,1" class="input-field block w-full">
                 </div>
                 <div>
                     <label for="knapsack-capacity" class="block label-text mb-1">Knapsack Capacity:</label>
-                    <input type="number" id="knapsack-capacity" value="100" class="input-field block w-full">
+                    <input type="number" id="knapsack-capacity" value="20" class="input-field block w-full"> {/* Default capacity changed to 20 */}
                 </div>
             </div>
             <div id="input-error" class="mt-2 text-xs text-red-500"></div>
         </section>
 
-        <!-- Controls Section -->
-        <section id="controls-section" class="mb-6">
+        <section id="controls-section" class="content-section">
             <h2 class="section-title">Controls</h2>
             <div class="flex flex-wrap gap-2 items-center">
                 <button id="start-btn" class="btn btn-primary">Start</button>
@@ -211,41 +286,61 @@
                 <button id="reset-btn" class="btn btn-danger">Reset</button>
                  <div class="flex items-center md:ml-auto mt-2 md:mt-0">
                     <label for="speed-slider" class="mr-2 label-text">Speed:</label>
-                    <input type="range" id="speed-slider" min="100" max="2000" value="700" step="100" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
-                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">700ms</span>
+                    <input type="range" id="speed-slider" min="50" max="1500" value="500" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">500ms</span>
                 </div>
             </div>
         </section>
         
-        <!-- DP Table Section -->
-        <section id="dp-table-section" class="mb-6">
-            <h3 class="text-lg font-semibold mb-2 text-slate-700">DP Table</h3>
-            <div id="dp-table-container" class="dp-table-container">
-                 <p class="text-center text-slate-400 py-4 text-sm">DP Table will render here.</p>
+        <div class="flex flex-col md:flex-row gap-6 mt-6">
+            <div class="md:w-3/5 space-y-6">
+                 <section class="content-section">
+                    <h3 class="text-lg font-semibold mb-2 text-slate-700">DP Table</h3>
+                    <div id="dp-table-container" class="dp-table-container">
+                         <p class="text-center text-slate-400 py-4 text-sm">DP Table will render here.</p>
+                    </div>
+                </section>
+                <section class="content-section">
+                    <h3 class="section-title mb-2">Results</h3>
+                    <p id="total-value-output" class="text-slate-700 text-sm">Max Value: <span class="font-semibold">-</span></p>
+                    <p id="selected-items-info-output" class="text-slate-700 text-sm">Selected Items (ID: Count): <span class="font-semibold">-</span></p>
+                </section>
+                 <section class="content-section">
+                     <h3 id="log-title" class="section-title collapsible-title">Log</h3>
+                    <div id="log-area" class="log-area">
+                        <p class="text-slate-400">Log messages will appear here...</p>
+                    </div>
+                </section>
             </div>
-        </section>
 
-        <!-- Log and Results Section -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="section-title mb-2">Log</h3>
-                <div id="log-area" class="log-area">
-                    <p class="text-slate-400">Log messages will appear here...</p>
-                </div>
+            <div class="md:w-2/5">
+                <section class="content-section">
+                    <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
+                    <div id="code-visualization-area" class="code-visualization expanded">
+                        <div class="code-line" data-line="1"><span class="python-keyword">def</span> <span class="python-function">bounded_knapsack_dp</span>(<span class="python-parameters">v, w, counts, C</span>):</div>
+                        <div class="code-line" data-line="2">  <span class="python-variable">n_types</span> <span class="python-operator">=</span> <span class="python-function">len</span>(<span class="python-variable">v</span>)</div>
+                        <div class="code-line" data-line="3">  <span class="python-variable">dp</span> <span class="python-operator">=</span> [[<span class="python-number">0</span>]*(<span class="python-variable">C</span><span class="python-operator">+</span><span class="python-number">1</span>) <span class="python-keyword">for</span> _ <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-variable">n_types</span><span class="python-operator">+</span><span class="python-number">1</span>)]</div>
+                        <div class="code-line" data-line="4">  </div>
+                        <div class="code-line" data-line="5">  <span class="python-keyword">for</span> <span class="python-variable">i</span> <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-number">1</span>, <span class="python-variable">n_types</span> <span class="python-operator">+</span> <span class="python-number">1</span>):</div>
+                        <div class="code-line" data-line="6">    <span class="python-variable">item_v</span> <span class="python-operator">=</span> <span class="python-variable">v</span>[<span class="python-variable">i</span><span class="python-operator">-</span><span class="python-number">1</span>]; <span class="python-variable">item_w</span> <span class="python-operator">=</span> <span class="python-variable">w</span>[<span class="python-variable">i</span><span class="python-operator">-</span><span class="python-number">1</span>]; <span class="python-variable">item_count</span> <span class="python-operator">=</span> <span class="python-variable">counts</span>[<span class="python-variable">i</span><span class="python-operator">-</span><span class="python-number">1</span>]</div>
+                        <div class="code-line" data-line="7">    <span class="python-keyword">for</span> <span class="python-variable">cap</span> <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-number">1</span>, <span class="python-variable">C</span> <span class="python-operator">+</span> <span class="python-number">1</span>):</div>
+                        <div class="code-line" data-line="8">      <span class="python-variable">dp</span>[<span class="python-variable">i</span>][<span class="python-variable">cap</span>] <span class="python-operator">=</span> <span class="python-variable">dp</span>[<span class="python-variable">i</span><span class="python-operator">-</span><span class="python-number">1</span>][<span class="python-variable">cap</span>] <span class="python-comment"># Option: Don't take any of current item type</span></div>
+                        <div class="code-line" data-line="9">      <span class="python-keyword">for</span> <span class="python-variable">k</span> <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-number">1</span>, <span class="python-variable">item_count</span> <span class="python-operator">+</span> <span class="python-number">1</span>):</div>
+                        <div class="code-line" data-line="10">       <span class="python-keyword">if</span> <span class="python-variable">cap</span> <span class="python-operator">>=</span> <span class="python-variable">k</span> * <span class="python-variable">item_w</span>:</div>
+                        <div class="code-line" data-line="11">         <span class="python-variable">val_with_k</span> <span class="python-operator">=</span> <span class="python-variable">dp</span>[<span class="python-variable">i</span><span class="python-operator">-</span><span class="python-number">1</span>][<span class="python-variable">cap</span> <span class="python-operator">-</span> <span class="python-variable">k</span> * <span class="python-variable">item_w</span>] <span class="python-operator">+</span> <span class="python-variable">k</span> * <span class="python-variable">item_v</span></div>
+                        <div class="code-line" data-line="12">         <span class="python-variable">dp</span>[<span class="python-variable">i</span>][<span class="python-variable">cap</span>] <span class="python-operator">=</span> <span class="python-function">max</span>(<span class="python-variable">dp</span>[<span class="python-variable">i</span>][<span class="python-variable">cap</span>], <span class="python-variable">val_with_k</span>)</div>
+                        <div class="code-line" data-line="13">       <span class="python-keyword">else</span>:</div>
+                        <div class="code-line" data-line="14">         <span class="python-keyword">break</span> <span class="python-comment"># Not enough capacity for k items of this type</span></div>
+                        <div class="code-line" data-line="15"> </div>
+                        <div class="code-line" data-line="16"> <span class="python-keyword">return</span> <span class="python-variable">dp</span>[<span class="python-variable">n_types</span>][<span class="python-variable">C</span>]</div>
+                    </div>
+                </section>
             </div>
-            <div>
-                <h3 class="section-title mb-2">Results</h3>
-                <p id="total-value-output" class="text-slate-700 text-sm">Max Value: <span class="font-semibold">-</span></p>
-                <p id="selected-items-info-output" class="text-slate-700 text-sm">Items Selected (ID: Count): <span class="font-semibold">-</span></p>
-            </div>
-        </section>
-
-        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p class="text-xs text-slate-400">&copy; Bounded Knapsack Visualizer</p>
-        </footer>
+        </div>
     </div>
 
     <script>
+        // DOM Elements
         const weightsInput = document.getElementById('item-weights');
         const valuesInput = document.getElementById('item-values');
         const countsInput = document.getElementById('item-counts'); 
@@ -259,44 +354,65 @@
         const speedValueSpan = document.getElementById('speed-value');
         const dpTableContainer = document.getElementById('dp-table-container');
         const logArea = document.getElementById('log-area');
-        
+        const logTitle = document.getElementById('log-title');
+        const codeVisualizationArea = document.getElementById('code-visualization-area');
+        const codeTitle = document.getElementById('code-title');
         const totalValueOutput = document.getElementById('total-value-output').querySelector('span');
         const selectedItemsInfoOutput = document.getElementById('selected-items-info-output').querySelector('span');
         const inputError = document.getElementById('input-error');
 
+        // Global state
         let items = []; 
         let W_capacity = 0;
         let N_item_types = 0; 
-        
-        let animationSpeed = 700;
+        let animationSpeed = 500;
         let isSolving = false;
         let isPaused = false;
-        let autoplayIntervalId = null;
-        
+        let autoplayTimeoutId = null;
         let dpData = []; 
         let dpTableElements = []; 
         let animationQueue = []; 
         let isProcessingStep = false;
-
         let userHasScrolledDPTable = false;
         let dpTableScrollResumeTimer = null;
         const DP_TABLE_SCROLL_RESUME_DELAY = 3000; 
         let isProgrammaticDPScroll = false;
 
-
+        // Utility: Sleep function
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
+        // UI: Add log message
         function addLog(message) {
             const entry = document.createElement('div');
             entry.className = 'log-entry';
             entry.textContent = message;
-            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+            if (logArea.firstChild && logArea.firstChild.textContent.includes("Log messages will appear here")) {
                 logArea.innerHTML = '';
             }
             logArea.appendChild(entry);
             logArea.scrollTop = logArea.scrollHeight;
         }
 
+        // UI: Clear code highlights
+        function clearCodeHighlights() {
+            if(codeVisualizationArea) {
+                const lines = codeVisualizationArea.querySelectorAll('.code-line');
+                lines.forEach(line => line.classList.remove('highlight-code-active'));
+            }
+        }
+
+        // UI: Highlight specific code line
+        function highlightCodeLine(lineNumber, type = 'active') {
+            clearCodeHighlights();
+            if(codeVisualizationArea) {
+                const line = codeVisualizationArea.querySelector(`.code-line[data-line="${lineNumber}"]`);
+                if (line) {
+                    line.classList.add(`highlight-code-${type}`);
+                }
+            }
+        }
+        
+        // Logic: Validate and parse inputs
         function validateAndParseInputs() {
             const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
             const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
@@ -304,13 +420,18 @@
             const capStr = capacityInput.value;
 
             if (weightsStr.length === 0 || valuesStr.length === 0 || countsStr.length === 0 || !capStr) {
-                inputError.textContent = "Error: All parameters required (weights, values, counts, capacity).";
+                inputError.textContent = "Error: All parameters are required (weights, values, counts, capacity).";
                 return false;
             }
             if (weightsStr.length !== valuesStr.length || weightsStr.length !== countsStr.length) {
                 inputError.textContent = "Error: Item weights, values, and counts must have the same number of entries.";
                 return false;
             }
+             if (weightsStr.length > 5 || parseInt(capStr) > 20) { 
+                 inputError.textContent = "Error: For better visualization, please use at most 5 item types and a capacity of 20.";
+                 return false;
+            }
+
 
             items = [];
             try {
@@ -323,7 +444,7 @@
                     inputError.textContent = "Error: Weights, values, counts, and capacity must be valid numbers.";
                     return false;
                 }
-                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || parsedCounts.some(c => c < 0) || W_capacity < 0) {
+                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || parsedCounts.some(c => c < 0) || W_capacity < 0) { // Ensure counts are non-negative
                      inputError.textContent = "Error: Weights must be positive. Values, counts, and capacity must be non-negative.";
                     return false;
                 }
@@ -346,13 +467,14 @@
             return true;
         }
         
+        // UI: Initialize DP table HTML structure
         function initializeDPTableHTML() {
             dpTableContainer.innerHTML = '';
             const table = document.createElement('table');
             table.className = 'dp-table w-full border-collapse';
             const header = table.createTHead().insertRow();
             const thCorner = document.createElement('th');
-            thCorner.innerHTML = 'Item Type<span class="text-xs text-slate-400">\\</span>Cap.';
+            thCorner.innerHTML = 'Item Type<span class="text-xs text-slate-400">\\</span>Capacity';
             header.appendChild(thCorner);
 
             for (let j = 0; j <= W_capacity; j++) { 
@@ -389,8 +511,9 @@
             dpTableContainer.appendChild(table);
         }
         
+        // Logic: Initialize algorithm state
         function initializeAlgorithmState() {
-            if (!validateAndParseInputs()) return false;
+            if (!validateAndParseInputs()) return false; // Validation happens here
 
             dpData = Array(N_item_types + 1).fill(null).map(() => Array(W_capacity + 1).fill(0));
             initializeDPTableHTML(); 
@@ -406,19 +529,22 @@
             addLog("--- Starting Bounded Knapsack (Dynamic Programming) ---");
             totalValueOutput.textContent = "-";
             selectedItemsInfoOutput.textContent = "-";
+            clearCodeHighlights();
             return true;
         }
         
+        // UI: Clear all highlights from DP table cells
         function clearCellHighlights() {
             for (let r = 0; r <= N_item_types; r++) {
                 for (let c = 0; c <= W_capacity; c++) {
                     if (dpTableElements[r] && dpTableElements[r][c]) {
-                        dpTableElements[r][c].classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency');
+                        dpTableElements[r][c].classList.remove('highlight-current', 'highlight-dependency', 'highlight-chosen-dependency', 'highlight-cannot-include');
                     }
                 }
             }
         }
 
+        // Logic: Process a single step of the DP calculation
         async function processSingleStep_Bounded() {
             if (animationQueue.length === 0 || isProcessingStep) {
                 if (animationQueue.length === 0 && isSolving) finalizeSolution_Bounded();
@@ -445,48 +571,70 @@
             }
 
             let log_message = `Calculating dp[${i_dp}][${j_dp}] for Item Type ${currentItem.id} (W:${currentItem.weight}, V:${currentItem.value}, Count:${currentItem.count}), Capacity: ${j_dp}\n`;
+            highlightCodeLine(6); await sleep(animationSpeed/4);
             
-            let maxValueForCell = dpData[i_dp-1][j_dp]; 
-            let best_k = 0; 
+            // Initialize with the value of not taking the current item type
+            dpData[i_dp][j_dp] = dpData[i_dp-1][j_dp]; 
+            let best_k_for_cell = 0; 
+            highlightCodeLine(8);
+            if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp]) {
+                dpTableElements[i_dp-1][j_dp].classList.add('highlight-dependency'); 
+            }
+            log_message += `  Base: Value if not taking Item Type ${currentItem.id} (dp[${i_dp-1}][${j_dp}]) = ${dpData[i_dp][j_dp]}\n`;
+            await sleep(animationSpeed / (currentItem.count + 2));
 
-            dpTableElements[i_dp-1][j_dp].classList.add('highlight-dependency'); 
-            log_message += `  Trying k=0 (don't take Item ${currentItem.id}): Value from dp[${i_dp-1}][${j_dp}] = ${maxValueForCell}\n`;
-            await sleep(animationSpeed / (currentItem.count + 2)); // Pause for k=0 consideration
-
+            highlightCodeLine(9); // Outer loop for k
             for (let k = 1; k <= currentItem.count; k++) {
+                highlightCodeLine(10); // if cap >= k * item_w
                 if (j_dp >= k * currentItem.weight) {
+                    highlightCodeLine(11); // val_with_k calculation
                     const value_with_k_items = dpData[i_dp-1][j_dp - k * currentItem.weight] + k * currentItem.value;
-                    log_message += `  Trying k=${k} of Item ${currentItem.id}: ${k*currentItem.value} + dp[${i_dp-1}][${j_dp - k*currentItem.weight}] (${dpData[i_dp-1][j_dp - k*currentItem.weight]}) = ${value_with_k_items}\n`;
+                    log_message += `  Trying k=${k} of Item Type ${currentItem.id}: ${k*currentItem.value} + dp[${i_dp-1}][${j_dp - k*currentItem.weight}] (${dpData[i_dp-1][j_dp - k*currentItem.weight]}) = ${value_with_k_items}\n`;
                     
-                    dpTableElements[i_dp-1][j_dp - k * currentItem.weight].classList.add('highlight-dependency');
+                    if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp - k * currentItem.weight]) {
+                        dpTableElements[i_dp-1][j_dp - k * currentItem.weight].classList.add('highlight-dependency');
+                    }
                     await sleep(animationSpeed / (currentItem.count + 2)); 
 
-                    if (value_with_k_items > maxValueForCell) {
-                        maxValueForCell = value_with_k_items;
-                        best_k = k;
+                    highlightCodeLine(12); // max comparison
+                    if (value_with_k_items > dpData[i_dp][j_dp]) {
+                        dpData[i_dp][j_dp] = value_with_k_items;
+                        best_k_for_cell = k; // Store how many of this item type led to the max
                     }
-                     dpTableElements[i_dp-1][j_dp - k * currentItem.weight].classList.remove('highlight-dependency');
+                    if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp - k * currentItem.weight]) {
+                         dpTableElements[i_dp-1][j_dp - k * currentItem.weight].classList.remove('highlight-dependency');
+                    }
                 } else {
-                    log_message += `  Trying k=${k} of Item ${currentItem.id}: Not enough capacity (need ${k*currentItem.weight}).\n`;
+                    highlightCodeLine(14); // break
+                    log_message += `  Trying k=${k} of Item Type ${currentItem.id}: Not enough capacity (need ${k*currentItem.weight}). Stop trying more of this type.\n`;
+                    currentCell.classList.add('highlight-cannot-include'); // Add class if trying k makes it too heavy
                     break; 
                 }
             }
             
-            dpData[i_dp][j_dp] = maxValueForCell;
-            
-            if (best_k > 0) { 
+            if (best_k_for_cell > 0) { 
                 currentCell.classList.add('text-item-taken-in-dp');
-                log_message += `  Decision: Optimal to take ${best_k} of Item ${currentItem.id}. dp[${i_dp}][${j_dp}] = ${maxValueForCell}`;
-                dpTableElements[i_dp-1][j_dp - best_k * currentItem.weight].classList.add('highlight-chosen-dependency');
-                dpTableElements[i_dp-1][j_dp].classList.remove('highlight-chosen-dependency'); 
+                log_message += `  Decision: Optimal to take ${best_k_for_cell} of Item Type ${currentItem.id}. dp[${i_dp}][${j_dp}] = ${dpData[i_dp][j_dp]}`;
+                if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp - best_k_for_cell * currentItem.weight]) {
+                    dpTableElements[i_dp-1][j_dp - best_k_for_cell * currentItem.weight].classList.add('highlight-chosen-dependency');
+                }
+                 if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp]) {
+                    dpTableElements[i_dp-1][j_dp].classList.remove('highlight-dependency', 'highlight-chosen-dependency');
+                }
             } else { 
                 currentCell.classList.add('text-item-not-taken-in-dp');
-                log_message += `  Decision: Optimal to take 0 of Item ${currentItem.id}. dp[${i_dp}][${j_dp}] = ${maxValueForCell}`;
-                dpTableElements[i_dp-1][j_dp].classList.add('highlight-chosen-dependency');
+                log_message += `  Decision: Optimal to take 0 of Item Type ${currentItem.id} (or same value as not taking). dp[${i_dp}][${j_dp}] = ${dpData[i_dp][j_dp]}`;
+                if(dpTableElements[i_dp-1] && dpTableElements[i_dp-1][j_dp]) {
+                    dpTableElements[i_dp-1][j_dp].classList.add('highlight-chosen-dependency');
+                }
             }
             
             currentCell.textContent = dpData[i_dp][j_dp];
-            currentCell.classList.remove('highlight-current', 'text-slate-400');
+            currentCell.classList.remove('highlight-current', 'text-slate-400'); // Remove 'highlight-cannot-include' if it was set then overridden by not taking item
+             if (!currentCell.classList.contains('text-item-taken-in-dp') && !currentCell.classList.contains('text-item-not-taken-in-dp')) {
+                 // If no decision made (e.g., k=0 was optimal), it's like not taking the item
+                 currentCell.classList.add('text-item-not-taken-in-dp');
+             }
             currentCell.classList.add('highlight-calculated');
             addLog(log_message);
             await sleep(animationSpeed/2); 
@@ -495,7 +643,7 @@
             if (animationQueue.length > 0 && isSolving) {
                  if(isPaused) {
                     stepBtn.disabled = false; autoBtn.disabled = false; pauseBtn.disabled = true;
-                 } else if (autoplayIntervalId){
+                 } else if (autoplayTimeoutId){
                     stepBtn.disabled = true; autoBtn.disabled = true; pauseBtn.disabled = false;
                  }
             } else if (animationQueue.length === 0 && isSolving) {
@@ -504,25 +652,9 @@
             return animationQueue.length > 0;
         }
 
-
-        function startExecution_Bounded() {
-            if (isSolving) return;
-            if (!initializeAlgorithmState()) return;
-
-            isSolving = true;
-            isPaused = false;
-            
-            startBtn.disabled = true;
-            stepBtn.disabled = true; 
-            autoBtn.disabled = true; 
-            pauseBtn.disabled = false;
-            resetBtn.disabled = false; 
-
-            startAutoplay_Bounded();
-        }
-
-        function startAutoplay_Bounded() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+        // Control: Start/Resume autoplay
+        function startAutoplayAnimation() {
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
             isPaused = false;
             
             startBtn.disabled = true;
@@ -531,32 +663,32 @@
             pauseBtn.disabled = false;
             resetBtn.disabled = false;
 
-            addLog("Autoplay started...");
+            addLog("--- Autoplay Started/Resumed ---");
             
-            autoplayIntervalId = setInterval(async () => {
+            async function loop() {
+                if (isPaused || !isSolving) return;
                 try {
-                    if (isPaused) return; 
-                    const moreSteps = await processSingleStep_Bounded();
-                    if (!moreSteps) { 
-                        pauseAutoplay_Bounded(true); 
+                    const continueSolving = await processSingleStep_Bounded();
+                    if (continueSolving && isSolving && !isPaused) { 
+                        autoplayTimeoutId = setTimeout(loop, animationSpeed); 
+                    } else if (isSolving && animationQueue.length === 0) { 
+                        // finalizeSolution_Bounded(); // Called by processSingleStep if queue empty
                     }
                 } catch (e) {
                      console.error("Error in Bounded Knapsack autoplay:", e);
                      addLog("RUNTIME ERROR in autoplay: " + e.message);
-                     if(autoplayIntervalId) clearInterval(autoplayIntervalId);
                      finalizeSolution_Bounded(); 
                 }
-            }, animationSpeed * 1.1); 
+            }
+            loop();
         }
 
-        function pauseAutoplay_Bounded(finishedNaturally = false) {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
+        // Control: Pause autoplay
+        function pauseAutoplayAnimation() {
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             isPaused = true;
-
-            if (!finishedNaturally) {
-                addLog("--- Autoplay Paused ---");
-            }
+            addLog("--- Autoplay Paused ---");
 
             if (isSolving) { 
                 startBtn.disabled = true;
@@ -565,30 +697,40 @@
                 pauseBtn.disabled = true;
                 resetBtn.disabled = false;
             }
-             if (finishedNaturally && animationQueue.length === 0) { 
-                finalizeSolution_Bounded();
-            }
         }
         
+        // Logic: Finalize solution and display results
         function finalizeSolution_Bounded() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             isSolving = false;
             isPaused = false;
+            highlightCodeLine(16, 'solution');
             
             const maxValue = dpData[N_item_types][W_capacity];
             totalValueOutput.textContent = maxValue;
             addLog("--- Bounded Knapsack Solved ---");
             addLog(`Max Value: ${maxValue}`);
 
-            let itemsCount = {};
+            let itemsCountResult = {}; 
             let currentW = W_capacity;
             for (let i = N_item_types; i > 0 && currentW > 0; i--) {
                 const item = items[i-1];
                 for (let k = item.count; k >= 0; k--) { 
-                    if (currentW >= k * item.weight && dpData[i][currentW] === dpData[i-1][currentW - k * item.weight] + k * item.value) {
+                    let valueIfKTaken;
+                    if (k === 0) {
+                        valueIfKTaken = dpData[i-1][currentW];
+                    } else {
+                        if (currentW - k * item.weight >= 0) {
+                             valueIfKTaken = dpData[i-1][currentW - k * item.weight] + k * item.value;
+                        } else {
+                            continue; // Cannot take k items if weight exceeds currentW
+                        }
+                    }
+                    
+                    if (dpData[i][currentW] === valueIfKTaken) {
                         if (k > 0) {
-                            itemsCount[item.id] = (itemsCount[item.id] || 0) + k;
+                            itemsCountResult[item.id] = (itemsCountResult[item.id] || 0) + k;
                         }
                         currentW -= k * item.weight;
                         break; 
@@ -596,9 +738,9 @@
                 }
             }
             
-            let selectedStr = Object.entries(itemsCount).map(([id, count]) => `Item ${id}: ${count}x`).join('; ');
+            let selectedStr = Object.entries(itemsCountResult).map(([id, count]) => `Item ${id}: ${count}x`).join('; ');
             selectedItemsInfoOutput.textContent = selectedStr || "None";
-            addLog(`Items Taken: ${selectedStr || "None"}`);
+            addLog(`Selected Items: ${selectedStr || "None"}`);
             
             startBtn.disabled = false;
             stepBtn.disabled = true;
@@ -607,9 +749,10 @@
             resetBtn.disabled = false;
         }
 
+        // Control: Reset all states and UI
         function resetAll() {
-            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
-            autoplayIntervalId = null;
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
             isSolving = false;
             isPaused = false;
             animationQueue = [];
@@ -617,13 +760,13 @@
             userHasScrolledDPTable = false; 
             clearTimeout(dpTableScrollResumeTimer);
 
-            weightsInput.value = "10,20,30,15,25,5,12,18,22,8"; 
-            valuesInput.value = "60,100,120,70,110,20,50,75,95,35"; 
-            countsInput.value = "2,1,3,1,2,5,2,1,1,4";
-            capacityInput.value = "100";    
+            weightsInput.value = "10,20,30"; 
+            valuesInput.value = "60,100,120"; 
+            countsInput.value = "1,2,1"; 
+            capacityInput.value = "20"; // Default capacity set to 20
 
-            speedSlider.value = "700"; 
-            animationSpeed = 700; 
+            speedSlider.value = "500"; 
+            animationSpeed = 500; 
             speedValueSpan.textContent = `${animationSpeed}ms`;
 
             if(inputError) inputError.textContent = ""; 
@@ -631,6 +774,7 @@
 
             logArea.innerHTML = ''; 
             addLog("Log messages will appear here..."); 
+            clearCodeHighlights();
             
             totalValueOutput.textContent = "-";
             selectedItemsInfoOutput.textContent = "-";
@@ -654,45 +798,54 @@
             speedValueSpan.textContent = `${animationSpeed}ms`;
         });
         
-        startBtn.addEventListener('click', startExecution_Bounded);
+        startBtn.addEventListener('click', () => {
+             if (isSolving) return;
+            if (!initializeAlgorithmState()) return; // Validation now happens in initialize
+            isSolving = true;
+            isPaused = false;
+            startAutoplayAnimation();
+        });
         
         stepBtn.addEventListener('click', async () => {
             if (!isSolving) { 
                 if (!initializeAlgorithmState()) return;
                 isSolving = true;
-                isPaused = true; 
-                addLog("Initialized for stepping. Click Step to proceed.");
-                startBtn.disabled = true;
-                stepBtn.disabled = false;
-                autoBtn.disabled = false;
-                pauseBtn.disabled = true;
-                resetBtn.disabled = false;
-                return;
             }
+            isPaused = true;
+            if (autoplayTimeoutId) clearTimeout(autoplayTimeoutId);
+            autoplayTimeoutId = null;
 
-            if (isSolving && isPaused) { 
-                 await processSingleStep_Bounded();
-            }
+            startBtn.disabled = true;
+            stepBtn.disabled = false;
+            autoBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+
+            await processSingleStep_Bounded();
+            stepBtn.disabled = animationQueue.length === 0;
+            autoBtn.disabled = animationQueue.length === 0;
         });
 
         autoBtn.addEventListener('click', () => { 
             if (!isSolving) { 
                 if (!initializeAlgorithmState()) return;
                 isSolving = true;
-                startAutoplay_Bounded();
-            } else if (isSolving && isPaused) { 
-                startAutoplay_Bounded();
             }
+            startAutoplayAnimation();
         });
         
-        pauseBtn.addEventListener('click', () => {
-            if (isSolving && !isPaused) {
-                pauseAutoplay_Bounded();
-            }
-        });
-
+        pauseBtn.addEventListener('click', pauseAutoplayAnimation);
         resetBtn.addEventListener('click', resetAll);
 
+        codeTitle.addEventListener('click', () => { 
+            codeVisualizationArea.classList.toggle('expanded');
+            codeTitle.classList.toggle('expanded');
+        });
+        logTitle.addEventListener('click', () => { 
+            logArea.classList.toggle('expanded');
+            logTitle.classList.toggle('expanded');
+        });
+        
         dpTableContainer.addEventListener('scroll', () => {
             if (isProgrammaticDPScroll) {
                 isProgrammaticDPScroll = false; 
@@ -705,9 +858,7 @@
             }, DP_TABLE_SCROLL_RESUME_DELAY);
         });
         
-        // Initial call
         resetAll();
-
     </script>
 </body>
 </html>

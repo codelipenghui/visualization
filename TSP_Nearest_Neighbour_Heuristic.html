@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP - Nearest Neighbour Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        /* Button Styles from Knapsack Minimalist */
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; /* slate-300 default border */
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; /* slate-700 */
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; /* slate-800 */
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; /* slate-100 */
+            color: #334155; /* slate-700 */
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; /* slate-200 */
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled { /* Combined disabled styles */
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; /* slate-400 */
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; /* slate-600, was red-500, adjusted for monochrome */
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; /* slate-700 */
+            border-color: #334155;
+        }
+
+        #tsp-canvas {
+            border: 1px solid #e2e8f0; /* slate-200 */
+            cursor: crosshair;
+            background-color: #f8fafc; /* slate-50, same as body for grid visibility */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .log-area {
+            background-color: #f1f5f9; /* slate-100 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 0.75rem;
+            min-height: 60px;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; /* slate-200 */
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { /* For range slider thumb */
+             accent-color: #64748b; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">Travelling Salesperson Problem</h1>
+            <p class="text-md text-slate-500 mt-1">Nearest Neighbour Heuristic Visualization</p>
+        </header>
+
+        <!-- Setup Section -->
+        <section id="setup-section" class="mb-6">
+            <h2 class="section-title">City Setup</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="num-cities" class="block label-text mb-1">Number of Random Cities:</label>
+                    <input type="number" id="num-cities" value="10" min="3" max="50" class="input-field block w-full">
+                </div>
+                <div class="md:col-span-2 flex items-end">
+                    <button id="generate-cities-btn" class="btn btn-secondary w-full">Generate Random Cities</button>
+                </div>
+            </div>
+             <p class="text-xs text-slate-500">Alternatively, click on the canvas below to add cities manually.</p>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Solver Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-tsp-btn" class="btn btn-primary">Start</button>
+                <button id="step-tsp-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-tsp-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-tsp-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-tsp-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
+                    <input type="range" id="tsp-speed-slider" min="50" max="1000" value="300" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="tsp-speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">300ms</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Visualization Canvas -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
+            <canvas id="tsp-canvas" width="700" height="400"></canvas>
+        </section>
+
+        <!-- Log and Results Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="tsp-log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Results</h3>
+                <p id="tsp-path-output" class="text-slate-700 text-sm">Path: <span class="font-semibold">-</span></p>
+                <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; TSP Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tsp-canvas');
+        const ctx = canvas.getContext('2d');
+        const numCitiesInput = document.getElementById('num-cities');
+        const generateCitiesBtn = document.getElementById('generate-cities-btn');
+        // const clearCitiesBtn = document.getElementById('clear-cities-btn'); // Removed
+        
+        const startTspBtn = document.getElementById('start-tsp-btn');
+        const stepTspBtn = document.getElementById('step-tsp-btn');
+        const autoTspBtn = document.getElementById('auto-tsp-btn');
+        const pauseTspBtn = document.getElementById('pause-tsp-btn');
+        const resetTspBtn = document.getElementById('reset-tsp-btn');
+        
+        const speedSlider = document.getElementById('tsp-speed-slider');
+        const speedValueSpan = document.getElementById('tsp-speed-value');
+        const logArea = document.getElementById('tsp-log-area');
+        const pathOutput = document.getElementById('tsp-path-output').querySelector('span');
+        const distanceOutput = document.getElementById('tsp-distance-output').querySelector('span');
+
+        let cities = []; // Array of {x, y, id}
+        let tour = [];
+        let totalDistance = 0;
+        let isSolvingTSP = false;
+        let isPausedTSP = false; 
+        let animationSpeed = 300;
+        let cityIdCounter = 0;
+        let currentTspSolveController = null; 
+
+        const CITY_RADIUS = 6; 
+        const GRID_SPACING = 50;
+        const GRID_COLOR = "#e2e8f0"; 
+
+        const CITY_COLOR_UNVISITED = "#64748b"; 
+        const CITY_TEXT_UNVISITED = "#f8fafc";   
+        const CITY_COLOR_VISITED = "#94a3b8";   
+        const CITY_TEXT_VISITED = "#1e293b";    
+        const CITY_COLOR_CURRENT = "#334155";   
+        const CITY_TEXT_CURRENT = "#f8fafc";    
+        const CITY_COLOR_START = "#cbd5e1";     
+        const CITY_BORDER_START = "#475569";  
+        const CITY_TEXT_START = "#1e293b";      
+        
+        const PATH_COLOR_DEFAULT = "#94a3b8";   
+        const PATH_COLOR_HIGHLIGHT = "#1e293b"; 
+
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function drawGrid() {
+            ctx.beginPath();
+            ctx.strokeStyle = GRID_COLOR;
+            ctx.lineWidth = 0.5; 
+
+            for (let x = GRID_SPACING; x < canvas.width; x += GRID_SPACING) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+            }
+            for (let y = GRID_SPACING; y < canvas.height; y += GRID_SPACING) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawCities() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid(); 
+
+            cities.forEach((city) => {
+                ctx.beginPath();
+                ctx.arc(city.x, city.y, CITY_RADIUS, 0, Math.PI * 2);
+
+                let fillColor = CITY_COLOR_UNVISITED;
+                let textColor = CITY_TEXT_UNVISITED;
+                let strokeStyle = null; 
+                
+                const isStartCityInTour = tour.length > 0 && city.id === cities[tour[0]].id;
+                
+                if (isStartCityInTour) {
+                    fillColor = CITY_COLOR_START;
+                    textColor = CITY_TEXT_START;
+                    strokeStyle = CITY_BORDER_START;
+                } else if (city.isCurrent) {
+                    fillColor = CITY_COLOR_CURRENT;
+                    textColor = CITY_TEXT_CURRENT;
+                } else if (city.visited) {
+                    fillColor = CITY_COLOR_VISITED;
+                    textColor = CITY_TEXT_VISITED;
+                }
+                
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                if (strokeStyle) {
+                    ctx.strokeStyle = strokeStyle;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+                ctx.closePath();
+
+                ctx.fillStyle = textColor;
+                ctx.font = "9px Inter"; 
+                ctx.textAlign = "center";
+                ctx.fillText(city.id, city.x, city.y + CITY_RADIUS + 8); 
+            });
+        }
+
+        function drawTour(tempPath = null) {
+            drawCities(); 
+            if (tour.length < 2 && !tempPath) return;
+
+            const path_to_draw = tempPath || tour;
+            if (path_to_draw.length < 2 || !cities[path_to_draw[0]]) return; 
+
+            ctx.strokeStyle = PATH_COLOR_DEFAULT;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cities[path_to_draw[0]].x, cities[path_to_draw[0]].y);
+            for (let i = 1; i < path_to_draw.length; i++) {
+                if (cities[path_to_draw[i]]) { 
+                    ctx.lineTo(cities[path_to_draw[i]].x, cities[path_to_draw[i]].y);
+                }
+            }
+            ctx.stroke();
+
+            if (!tempPath && tour.length === cities.length && tour.length > 0 && cities[tour[0]]) { 
+                 ctx.lineTo(cities[tour[0]].x, cities[tour[0]].y);
+                 ctx.stroke();
+            }
+        }
+        
+        function highlightSegment(cityIndex1, cityIndex2) {
+            if (cityIndex1 === undefined || cityIndex2 === undefined || !cities[cityIndex1] || !cities[cityIndex2]) return;
+            drawTour(); 
+            ctx.strokeStyle = PATH_COLOR_HIGHLIGHT;
+            ctx.lineWidth = 2; 
+            ctx.beginPath();
+            ctx.moveTo(cities[cityIndex1].x, cities[cityIndex1].y);
+            ctx.lineTo(cities[cityIndex2].x, cities[cityIndex2].y);
+            ctx.stroke();
+        }
+
+        canvas.addEventListener('click', (event) => {
+            if (isSolvingTSP) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            cities.push({ x, y, id: ++cityIdCounter, visited: false, isCurrent: false });
+            drawCities();
+            addLog(`Added city ${cityIdCounter} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+        });
+
+        generateCitiesBtn.addEventListener('click', () => {
+            if (isSolvingTSP) return;
+            cities = [];
+            cityIdCounter = 0;
+            const num = parseInt(numCitiesInput.value);
+            for (let i = 0; i < num; i++) {
+                cities.push({
+                    x: Math.random() * (canvas.width - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5), 
+                    y: Math.random() * (canvas.height - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5),
+                    id: ++cityIdCounter,
+                    visited: false,
+                    isCurrent: false
+                });
+            }
+            drawCities();
+            addLog(`Generated ${num} random cities.`);
+            resetSolutionUI();
+        });
+
+        // clearCitiesBtn.addEventListener('click', () => { // Removed
+        //     if (isSolvingTSP) return;
+        //     cities = [];
+        //     cityIdCounter = 0;
+        //     drawCities();
+        //     addLog("Cleared all cities.");
+        //     resetSolutionUI();
+        // });
+        
+        resetTspBtn.addEventListener('click', resetSolutionFull);
+
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        function resetSolutionUI(){ // Resets visuals of a solution, keeps cities
+            tour = [];
+            totalDistance = 0;
+            cities.forEach(c => { c.visited = false; c.isCurrent = false; });
+            pathOutput.textContent = "-";
+            distanceOutput.textContent = "-";
+            drawCities(); 
+        }
+
+        function resetSolutionFull() { // Full reset including cities and logs
+            if (currentTspSolveController) {
+                currentTspSolveController.abort(); 
+            }
+            isSolvingTSP = false;
+            isPausedTSP = false;
+            
+            cities = []; 
+            cityIdCounter = 0;
+            resetSolutionUI(); 
+
+            logArea.innerHTML = '<p class="text-slate-400">Log messages will appear here...</p>'; 
+            addLog("System reset. Add or generate cities.");
+
+            startTspBtn.disabled = false;
+            generateCitiesBtn.disabled = false;
+            // clearCitiesBtn.disabled = false; // Removed
+            stepTspBtn.disabled = true;
+            autoTspBtn.disabled = true;
+            pauseTspBtn.disabled = true;
+            resetTspBtn.disabled = false; 
+        }
+        
+        function distance(city1, city2) {
+            if (!city1 || !city2) return Infinity;
+            const dx = city1.x - city2.x;
+            const dy = city1.y - city2.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        async function solveTSPAlgorithm(signal) { 
+            resetSolutionUI(); 
+
+            addLog(`Starting TSP solver with ${cities.length} cities...`);
+
+            let currentCityIndex = 0; 
+            cities[currentCityIndex].visited = true;
+            cities[currentCityIndex].isCurrent = true;
+            tour.push(currentCityIndex); 
+            
+            drawCities(); 
+            await sleep(animationSpeed);
+            if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
+
+
+            for (let count = 1; count < cities.length; count++) {
+                if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
+                
+                let nearestCityIndex = -1;
+                let minDist = Infinity;
+
+                addLog(`Current city: ${cities[currentCityIndex].id}. Finding nearest...`);
+
+                for (let i = 0; i < cities.length; i++) {
+                    if (!cities[i].visited) {
+                        const d = distance(cities[currentCityIndex], cities[i]);
+                        if (d < minDist) {
+                            minDist = d;
+                            nearestCityIndex = i;
+                        }
+                    }
+                }
+                
+                if (nearestCityIndex !== -1) {
+                    highlightSegment(currentCityIndex, nearestCityIndex);
+                    await sleep(animationSpeed);
+                    if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
+
+
+                    totalDistance += minDist;
+                    cities[currentCityIndex].isCurrent = false; 
+                    
+                    currentCityIndex = nearestCityIndex;
+                    cities[currentCityIndex].visited = true;
+                    cities[currentCityIndex].isCurrent = true;
+                    tour.push(currentCityIndex);
+                    
+                    addLog(`Nearest: City ${cities[currentCityIndex].id}. Dist: ${minDist.toFixed(2)}. Path: ${tour.map(idx => cities[idx].id).join('->')}`);
+                    drawTour(); 
+                    await sleep(animationSpeed);
+                } else {
+                     addLog("Error: No unvisited city found.");
+                     break; 
+                }
+            }
+            if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped before completing tour."); return; }
+
+
+            if (tour.length > 0 && cities[currentCityIndex] && cities[tour[0]]) {
+                const distToStart = distance(cities[currentCityIndex], cities[tour[0]]);
+                highlightSegment(currentCityIndex, tour[0]);
+                await sleep(animationSpeed);
+                if (signal.aborted || isPausedTSP) { addLog("TSP Solving stopped."); return; }
+
+                totalDistance += distToStart;
+                addLog(`Returning to start city ${cities[tour[0]].id}. Dist: ${distToStart.toFixed(2)}.`);
+            }
+            
+            if (cities[currentCityIndex]) cities[currentCityIndex].isCurrent = false; 
+            drawTour(); 
+
+            pathOutput.textContent = tour.map(idx => cities[idx].id).join(' -> ') + (tour.length > 0 && cities[tour[0]] ? ` -> ${cities[tour[0]].id}` : "");
+            distanceOutput.textContent = totalDistance.toFixed(2);
+            addLog(`TSP solution found. Total distance: ${totalDistance.toFixed(2)}`);
+        }
+
+        async function startTSPExecution() {
+            if (isSolvingTSP) return; 
+            if (cities.length < 2) {
+                addLog("Add at least 2 cities to solve.");
+                return;
+            }
+            
+            isSolvingTSP = true;
+            isPausedTSP = false; 
+            if (currentTspSolveController) { 
+                currentTspSolveController.abort();
+            }
+            currentTspSolveController = new AbortController(); 
+            const signal = currentTspSolveController.signal;
+
+            startTspBtn.disabled = true;
+            stepTspBtn.disabled = true; 
+            autoTspBtn.disabled = true;  
+            pauseTspBtn.disabled = false;
+            resetTspBtn.disabled = false; 
+            generateCitiesBtn.disabled = true;
+            // clearCitiesBtn.disabled = true; // Removed
+
+            try {
+                await solveTSPAlgorithm(signal);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    addLog("TSP Solving aborted by reset or new start.");
+                } else {
+                    addLog("An error occurred during TSP solving: " + error.message);
+                    console.error(error);
+                }
+            } finally {
+                if (!signal.aborted) { 
+                    if(isPausedTSP){ 
+                         addLog("TSP Solving stopped by user via Pause.");
+                         startTspBtn.disabled = false;
+                         stepTspBtn.disabled = false; 
+                         autoTspBtn.disabled = false;
+                         pauseTspBtn.disabled = true;
+                    } else { 
+                         isSolvingTSP = false; 
+                         startTspBtn.disabled = false;
+                         stepTspBtn.disabled = true;
+                         autoTspBtn.disabled = true;
+                         pauseTspBtn.disabled = true;
+                    }
+                }
+                if (!isSolvingTSP) { 
+                    generateCitiesBtn.disabled = false;
+                    // clearCitiesBtn.disabled = false; // Removed
+                }
+            }
+        }
+
+        startTspBtn.addEventListener('click', startTSPExecution);
+        
+        pauseTspBtn.addEventListener('click', () => {
+            if (isSolvingTSP && !isPausedTSP) {
+                isPausedTSP = true; 
+                addLog("Pause requested. Current TSP process will stop at the next check.");
+                pauseTspBtn.disabled = true; 
+            }
+        });
+
+        stepTspBtn.addEventListener('click', () => {
+            addLog("'Step' functionality for TSP currently restarts the process. Click 'Start' or 'Auto' for full run.");
+            if(isPausedTSP || !isSolvingTSP){
+                startTSPExecution();
+            }
+        });
+
+        autoTspBtn.addEventListener('click', () => {
+             addLog("'Auto' functionality currently restarts the process. Click 'Start' for full run.");
+            if(isPausedTSP || !isSolvingTSP){
+                 startTSPExecution();
+            }
+        });
+
+
+        // Initial setup
+        speedValueSpan.textContent = `${animationSpeed}ms`;
+        drawCities(); 
+        addLog("Canvas ready. Add cities by clicking or generate randomly.");
+
+    </script>
+</body>
+</html>

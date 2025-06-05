@@ -14,13 +14,12 @@
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
-        /* Removed .container-card styling for background and border */
         .main-title {
-            font-size: 2.1rem; /* Approx 30% smaller than 3xl (30px) */
+            font-size: 2.1rem; 
         }
-        @media (min-width: 768px) { /* md breakpoint */
+        @media (min-width: 768px) { 
             .main-title {
-                font-size: 2.5rem; /* Approx 30% smaller than 4xl (36px) */
+                font-size: 2.5rem; 
             }
         }
         .section-title {
@@ -28,7 +27,7 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            font-size: 0.9rem; /* Approx 30% smaller than 1.125rem (text-lg) */
+            font-size: 0.9rem; 
             font-weight: 600;
         }
         .label-text {
@@ -90,12 +89,11 @@
         .log-area {
             background-color: #f1f5f9; 
             border: 1px solid #e2e8f0; 
-            /* padding is applied by .expanded or when not expanded */
-            min-height: 0; /* Allows it to fully collapse */
+            min-height: 0; 
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 0; /* Collapsed by default */
+            max-height: 0; 
             opacity: 0;
             overflow: hidden;
             transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out, padding 0.5s ease-in-out;
@@ -106,7 +104,7 @@
             max-height: 250px; 
             opacity: 1;
             margin-top: 1rem; 
-            padding: 0.75rem; /* Padding only when expanded */
+            padding: 0.75rem; 
             overflow-y: auto;
         }
         .log-entry {
@@ -184,7 +182,8 @@
             line-height: 1.6; 
             max-height: 0; 
             opacity: 0;
-            overflow: hidden; 
+            overflow-x: auto; /* Added for horizontal scroll */
+            overflow-y: hidden; /* Keep vertical hidden for collapse transition */
             transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
             margin-top: 0;
         }
@@ -348,10 +347,7 @@
             </div>
         </div>
 
-
-        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p class="text-xs text-slate-400">&copy; Knapsack B&B Visualizer</p>
-        </footer>
+        <!-- Footer removed -->
     </div>
 
     <script>
@@ -369,9 +365,9 @@
         const treeSvgOverlay = document.getElementById('tree-svg-overlay');
         const treePlaceholder = document.getElementById('tree-placeholder');
         const codeVisualizationAreaBnB = document.getElementById('code-visualization-area-bnb'); 
-        const codeTitle = document.getElementById('code-title'); // For code collapse
+        const codeTitle = document.getElementById('code-title'); 
         const logArea = document.getElementById('log-area');
-        const logTitle = document.getElementById('log-title'); // For log collapse
+        const logTitle = document.getElementById('log-title'); 
         
         const bestValueOutput = document.getElementById('best-value-output').querySelector('span');
         const bestWeightOutput = document.getElementById('best-weight-output').querySelector('span');
@@ -415,8 +411,7 @@
             const line = codeVisualizationAreaBnB.querySelector(`.code-line[data-line-bnb="${lineNumber}"]`);
             if (line) {
                 line.classList.add(`highlight-code-${type}`);
-                // No auto-scroll for code area as per request
-                // line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                // No auto-scroll: line.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
             }
         }
 
@@ -755,8 +750,7 @@
         function initializeAlgorithmState() {
             if (!validateAndParseInputs()) return false;
 
-            isSolving = true;
-            isPaused = false;
+            // isSolving and isPaused will be set by the calling function (startBtn, stepBtn etc.)
             logArea.innerHTML = '';
             treeVisualizationArea.innerHTML = ''; 
             if(treePlaceholder) treePlaceholder.style.display = 'block';
@@ -981,7 +975,7 @@
                 codeTitle.classList.toggle('expanded');
             });
         }
-        if(logTitle) { // Check if logTitle element exists
+        if(logTitle) { 
             logTitle.addEventListener('click', () => { 
                 logArea.classList.toggle('expanded');
                 logTitle.classList.toggle('expanded');

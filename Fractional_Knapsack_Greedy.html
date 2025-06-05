@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractional Knapsack Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            font-size: 0.875rem;
+        }
+        .container-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        }
+        .section-title {
+            color: #334155; /* slate-700 */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        .label-text {
+            color: #475569; /* slate-600 */
+            font-size: 0.8rem;
+        }
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            padding: 0.625rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+        .input-field:focus {
+            border-color: #64748b; /* slate-500 */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 0.5rem 1rem; 
+            border: 1px solid #cbd5e1; 
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.75rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500;
+        }
+        .btn-primary { 
+             background-color: #334155; 
+             color: white;
+             border-color: #334155;
+        }
+        .btn-primary:hover {
+            background-color: #1e293b; 
+            border-color: #1e293b;
+        }
+        .btn-secondary { 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0; 
+        }
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
+            background-color: #f8fafc !important; 
+            color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important;
+            cursor: not-allowed;
+        }
+         .btn-danger {
+            background-color: #475569; 
+            color: white;
+            border-color: #475569;
+        }
+        .btn-danger:hover {
+            background-color: #334155; 
+            border-color: #334155;
+        }
+        .log-area {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 0.75rem;
+            min-height: 80px;
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        }
+        .log-entry {
+            margin-bottom: 0.3em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px dashed #e2e8f0; 
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .accent-slate-500 { 
+             accent-color: #64748b; 
+        }
+        .item-display-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            min-height: 60px;
+            background-color: #ffffff;
+        }
+        .item-card {
+            background-color: #f1f5f9; /* slate-100 */
+            border: 1px solid #cbd5e1; /* slate-300 */
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            text-align: center;
+            min-width: 100px;
+            transition: all 0.3s ease;
+        }
+        .item-card.current {
+            border-color: #334155; /* slate-700 */
+            box-shadow: 0 0 8px rgba(51, 65, 85, 0.3);
+            transform: scale(1.05);
+        }
+        .item-card.taken-full {
+            background-color: #d1fae5; /* emerald-100 */
+            border-color: #6ee7b7; /* emerald-300 */
+        }
+        .item-card.taken-partial {
+            background-color: #fef3c7; /* amber-100 */
+            border-color: #fcd34d; /* amber-300 */
+        }
+        .item-card.skipped {
+            opacity: 0.5;
+            background-color: #e2e8f0; /* slate-200 */
+        }
+        .knapsack-bar-container {
+            width: 100%;
+            height: 30px;
+            background-color: #e2e8f0; /* slate-200 */
+            border-radius: 0.25rem;
+            overflow: hidden;
+            border: 1px solid #cbd5e1; /* slate-300 */
+        }
+        .knapsack-bar-fill {
+            height: 100%;
+            background-color: #64748b; /* slate-500 */
+            width: 0%; /* Initial */
+            transition: width 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl container-card p-4 md:p-8 my-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">Fractional Knapsack Problem</h1>
+            <p class="text-md text-slate-500 mt-1">Greedy Algorithm Visualization</p>
+        </header>
+
+        <!-- Input Section -->
+        <section id="input-section" class="mb-6">
+            <h2 class="section-title">Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="item-weights" class="block label-text mb-1">Item Weights (csv):</label>
+                    <input type="text" id="item-weights" value="10,20,30,15,25,5,12,18,22,8" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="item-values" class="block label-text mb-1">Item Values (csv):</label>
+                    <input type="text" id="item-values" value="60,100,120,70,110,20,50,75,95,35" class="input-field block w-full">
+                </div>
+                <div>
+                    <label for="knapsack-capacity" class="block label-text mb-1">Knapsack Capacity:</label>
+                    <input type="number" id="knapsack-capacity" value="100" class="input-field block w-full">
+                </div>
+            </div>
+            <div id="input-error" class="mt-2 text-xs text-red-500"></div>
+        </section>
+
+        <!-- Controls Section -->
+        <section id="controls-section" class="mb-6">
+            <h2 class="section-title">Controls</h2>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button id="start-btn" class="btn btn-primary">Start</button>
+                <button id="step-btn" class="btn btn-secondary" disabled>Step</button>
+                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button> 
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="reset-btn" class="btn btn-danger">Reset</button>
+                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                    <label for="speed-slider" class="mr-2 label-text">Speed:</label>
+                    <input type="range" id="speed-slider" min="100" max="2000" value="700" step="100" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                    <span id="speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">700ms</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Item Display and Knapsack Visualization -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-slate-700">Items (Sorted by V/W Ratio)</h3>
+            <div id="item-display-area" class="item-display-area">
+                <p class="text-slate-400 text-sm">Items will be displayed here after starting.</p>
+            </div>
+            <h3 class="text-lg font-semibold mt-4 mb-2 text-slate-700">Knapsack Capacity</h3>
+            <div class="knapsack-bar-container">
+                <div id="knapsack-fill-bar" class="knapsack-bar-fill">0%</div>
+            </div>
+            <p id="knapsack-stats" class="text-xs text-slate-500 mt-1">Current Weight: 0 / Capacity: 0</p>
+        </section>
+
+        <!-- Log and Results Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="section-title mb-2">Log</h3>
+                <div id="log-area" class="log-area">
+                    <p class="text-slate-400">Log messages will appear here...</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="section-title mb-2">Results</h3>
+                <p id="total-value-output" class="text-slate-700 text-sm">Total Value in Knapsack: <span class="font-semibold">-</span></p>
+                <p id="total-weight-in-knapsack-output" class="text-slate-700 text-sm">Total Weight in Knapsack: <span class="font-semibold">-</span></p>
+                <p id="selected-items-info-output" class="text-slate-700 text-sm">Items Taken: <span class="font-semibold">-</span></p>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
+            <p class="text-xs text-slate-400">&copy; Fractional Knapsack Visualizer</p>
+        </footer>
+    </div>
+
+    <script>
+        const weightsInput = document.getElementById('item-weights');
+        const valuesInput = document.getElementById('item-values');
+        const capacityInput = document.getElementById('knapsack-capacity');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValueSpan = document.getElementById('speed-value');
+        const itemDisplayArea = document.getElementById('item-display-area');
+        const knapsackFillBar = document.getElementById('knapsack-fill-bar');
+        const knapsackStats = document.getElementById('knapsack-stats');
+        const logArea = document.getElementById('log-area');
+        
+        const totalValueOutput = document.getElementById('total-value-output').querySelector('span');
+        const totalWeightInKnapsackOutput = document.getElementById('total-weight-in-knapsack-output').querySelector('span');
+        const selectedItemsInfoOutput = document.getElementById('selected-items-info-output').querySelector('span');
+        const inputError = document.getElementById('input-error');
+
+        let allItems = []; 
+        let sortedItems = []; 
+        let W_capacity = 0;
+        
+        let animationSpeed = 700;
+        let isSolving = false;
+        let isPaused = false;
+        let autoplayIntervalId = null;
+        
+        let currentItemIndex = 0; 
+        let currentKnapsackWeight = 0;
+        let currentKnapsackValue = 0;
+        let fractionsTaken = {}; 
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+                logArea.innerHTML = '';
+            }
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function validateAndParseInputs() {
+            const weightsStr = weightsInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const valuesStr = valuesInput.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const capStr = capacityInput.value;
+
+            if (weightsStr.length === 0 || valuesStr.length === 0 || !capStr) {
+                inputError.textContent = "Error: All parameters required.";
+                return false;
+            }
+            if (weightsStr.length !== valuesStr.length) {
+                inputError.textContent = "Error: Item weights and values must have the same count.";
+                return false;
+            }
+
+            allItems = [];
+            try {
+                const parsedWeights = weightsStr.map(Number);
+                const parsedValues = valuesStr.map(Number);
+                W_capacity = parseInt(capStr);
+
+                if (parsedWeights.some(isNaN) || parsedValues.some(isNaN) || isNaN(W_capacity)) {
+                    inputError.textContent = "Error: Weights, values, and capacity must be valid numbers.";
+                    return false;
+                }
+                 if (parsedWeights.some(w => w <= 0) || parsedValues.some(v => v < 0) || W_capacity < 0) {
+                     inputError.textContent = "Error: Weights must be positive. Values and capacity must be non-negative.";
+                    return false;
+                }
+
+                for (let i = 0; i < parsedWeights.length; i++) {
+                    allItems.push({
+                        id: i + 1, 
+                        original_index: i,
+                        weight: parsedWeights[i],
+                        value: parsedValues[i],
+                        ratio: parsedWeights[i] > 0 ? parsedValues[i] / parsedWeights[i] : 0 
+                    });
+                }
+            } catch (e) {
+                inputError.textContent = "Error: Input parsing failed.";
+                return false;
+            }
+            
+            inputError.textContent = "";
+            return true;
+        }
+        
+        function displaySortedItems() {
+            itemDisplayArea.innerHTML = '';
+            sortedItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item-card';
+                itemDiv.id = `item-card-${item.original_index}`;
+                itemDiv.innerHTML = `ID:${item.id}<br>V:${item.value}, W:${item.weight}<br>Ratio:${item.ratio.toFixed(2)}`;
+                itemDisplayArea.appendChild(itemDiv);
+            });
+        }
+        
+        function updateKnapsackVisual() {
+            const percentageFilled = W_capacity > 0 ? (currentKnapsackWeight / W_capacity) * 100 : 0;
+            knapsackFillBar.style.width = `${Math.min(percentageFilled, 100)}%`; 
+            knapsackFillBar.textContent = `${Math.min(percentageFilled, 100).toFixed(0)}%`;
+            knapsackStats.textContent = `Current Weight: ${currentKnapsackWeight.toFixed(2)} / Capacity: ${W_capacity}`;
+        }
+
+        function updateItemCardVisual(itemOriginalIndex, status, fraction = 1) {
+            const itemCard = document.getElementById(`item-card-${itemOriginalIndex}`);
+            if (!itemCard) return;
+
+            itemCard.classList.remove('current', 'taken-full', 'taken-partial', 'skipped');
+            const item = allItems.find(it => it.original_index === itemOriginalIndex);
+             if (!item) return; 
+
+            switch (status) {
+                case 'current':
+                    itemCard.classList.add('current');
+                    break;
+                case 'taken-full':
+                    itemCard.classList.add('taken-full');
+                    itemCard.innerHTML = `ID:${item.id} (100%)<br>V:${item.value}, W:${item.weight}<br>Ratio:${item.ratio.toFixed(2)}`;
+                    break;
+                case 'taken-partial':
+                    itemCard.classList.add('taken-partial');
+                     itemCard.innerHTML = `ID:${item.id} (${(fraction*100).toFixed(0)}%)<br>V:${(item.value*fraction).toFixed(1)}, W:${(item.weight*fraction).toFixed(1)}<br>Ratio:${item.ratio.toFixed(2)}`;
+                    break;
+                case 'skipped':
+                    itemCard.classList.add('skipped');
+                    break;
+                default: 
+                    itemCard.innerHTML = `ID:${item.id}<br>V:${item.value}, W:${item.weight}<br>Ratio:${item.ratio.toFixed(2)}`;
+            }
+        }
+
+
+        async function processSingleStep_Fractional() {
+            if (currentItemIndex >= sortedItems.length || currentKnapsackWeight >= W_capacity) {
+                finalizeSolution_Fractional();
+                return false; 
+            }
+
+            const item = sortedItems[currentItemIndex];
+            
+            const prevCurrentCard = document.querySelector('.item-card.current');
+            if (prevCurrentCard) prevCurrentCard.classList.remove('current');
+            
+            updateItemCardVisual(item.original_index, 'current');
+            addLog(`Considering Item ${item.id} (V/W Ratio: ${item.ratio.toFixed(2)}, Weight: ${item.weight}, Value: ${item.value})`);
+            await sleep(animationSpeed);
+
+            const remainingCapacity = W_capacity - currentKnapsackWeight;
+
+            if (item.weight <= remainingCapacity) { 
+                currentKnapsackWeight += item.weight;
+                currentKnapsackValue += item.value;
+                fractionsTaken[item.original_index] = 1;
+                addLog(`  Took 100% of Item ${item.id}. Knapsack: ${currentKnapsackWeight.toFixed(2)}/${W_capacity}, Total Value: ${currentKnapsackValue.toFixed(2)}`);
+                updateItemCardVisual(item.original_index, 'taken-full');
+            } else if (remainingCapacity > 0) { 
+                const fraction = remainingCapacity / item.weight;
+                currentKnapsackWeight += item.weight * fraction;
+                currentKnapsackValue += item.value * fraction;
+                fractionsTaken[item.original_index] = fraction;
+                addLog(`  Took ${(fraction * 100).toFixed(0)}% of Item ${item.id}. Knapsack: ${currentKnapsackWeight.toFixed(2)}/${W_capacity}, Total Value: ${currentKnapsackValue.toFixed(2)}`);
+                updateItemCardVisual(item.original_index, 'taken-partial', fraction);
+            } else { 
+                 addLog(`  Cannot take Item ${item.id}. No remaining capacity.`);
+                 updateItemCardVisual(item.original_index, 'skipped');
+            }
+            
+            updateKnapsackVisual();
+            currentItemIndex++;
+            await sleep(animationSpeed); 
+            return true; 
+        }
+
+        function initializeAlgorithmState() {
+            if (!validateAndParseInputs()) return false;
+
+            sortedItems = [...allItems].sort((a, b) => b.ratio - a.ratio);
+            currentItemIndex = 0;
+            currentKnapsackWeight = 0;
+            currentKnapsackValue = 0;
+            fractionsTaken = {};
+            
+            logArea.innerHTML = '';
+            addLog("--- Starting Fractional Knapsack (Greedy by Ratio) ---");
+            addLog("Items sorted by V/W ratio (descending):");
+            sortedItems.forEach(item => {
+                addLog(`  Item ${item.id}: V=${item.value}, W=${item.weight}, Ratio=${item.ratio.toFixed(2)}`);
+            });
+            
+            displaySortedItems();
+            updateKnapsackVisual();
+
+            totalValueOutput.textContent = "-";
+            totalWeightInKnapsackOutput.textContent = "-";
+            selectedItemsInfoOutput.textContent = "-";
+            return true;
+        }
+
+        function startExecution_Fractional() {
+            if (isSolving) return;
+            if (!initializeAlgorithmState()) return;
+
+            isSolving = true;
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true; 
+            autoBtn.disabled = true; 
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false; 
+
+            startAutoplay_Fractional();
+        }
+
+        function startAutoplay_Fractional() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            isPaused = false;
+            
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = false;
+            resetBtn.disabled = false;
+
+            addLog("Autoplay started...");
+            
+            autoplayIntervalId = setInterval(async () => {
+                try {
+                    if (isPaused) return; 
+                    const moreSteps = await processSingleStep_Fractional();
+                    if (!moreSteps) { 
+                        pauseAutoplay_Fractional(true); 
+                    }
+                } catch (e) {
+                     console.error("Error in Fractional Knapsack autoplay:", e);
+                     addLog("RUNTIME ERROR in autoplay: " + e.message);
+                     if(autoplayIntervalId) clearInterval(autoplayIntervalId);
+                     finalizeSolution_Fractional(); 
+                }
+            }, animationSpeed * 1.1); 
+        }
+
+        function pauseAutoplay_Fractional(finishedNaturally = false) {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isPaused = true;
+
+            if (!finishedNaturally) {
+                addLog("--- Autoplay Paused ---");
+            }
+
+            if (isSolving) { 
+                startBtn.disabled = true;
+                stepBtn.disabled = currentItemIndex >= sortedItems.length || currentKnapsackWeight >= W_capacity;
+                autoBtn.disabled = currentItemIndex >= sortedItems.length || currentKnapsackWeight >= W_capacity;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+            }
+             if (finishedNaturally) {
+                finalizeSolution_Fractional();
+            }
+        }
+        
+        function finalizeSolution_Fractional() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+            
+            const finalSelectedItems = [];
+            allItems.forEach(item => { 
+                if (fractionsTaken[item.original_index] > 0) {
+                    finalSelectedItems.push(`Item ${item.id} (${(fractionsTaken[item.original_index]*100).toFixed(0)}% - V:${(item.value * fractionsTaken[item.original_index]).toFixed(1)}, W:${(item.weight * fractionsTaken[item.original_index]).toFixed(1)})`);
+                }
+            });
+
+            totalValueOutput.textContent = currentKnapsackValue.toFixed(2);
+            totalWeightInKnapsackOutput.textContent = currentKnapsackWeight.toFixed(2);
+            selectedItemsInfoOutput.textContent = finalSelectedItems.length > 0 ? finalSelectedItems.join('; ') : "None";
+            
+            addLog("--- Fractional Knapsack Solved ---");
+            
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        function resetAll() {
+            if (autoplayIntervalId) clearInterval(autoplayIntervalId);
+            autoplayIntervalId = null;
+            isSolving = false;
+            isPaused = false;
+
+            weightsInput.value = "10,20,30,15,25,5,12,18,22,8"; 
+            valuesInput.value = "60,100,120,70,110,20,50,75,95,35"; 
+            capacityInput.value = "100";    
+            speedSlider.value = "700"; 
+            animationSpeed = 700; 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+
+            if(inputError) inputError.textContent = ""; // Check if inputError exists before accessing
+            itemDisplayArea.innerHTML = '<p class="text-slate-400 text-sm">Items will be displayed here after starting.</p>';
+            knapsackFillBar.style.width = '0%';
+            knapsackFillBar.textContent = '0%';
+            knapsackStats.textContent = `Current Weight: 0 / Capacity: 0`;
+
+            logArea.innerHTML = ''; 
+            addLog("Log messages will appear here..."); 
+            
+            totalValueOutput.textContent = "-";
+            totalWeightInKnapsackOutput.textContent = "-";
+            selectedItemsInfoOutput.textContent = "-";
+
+
+            allItems = [];
+            sortedItems = [];
+            W_capacity = 0;
+            currentItemIndex = 0;
+            currentKnapsackWeight = 0;
+            currentKnapsackValue = 0;
+            fractionsTaken = {};
+
+
+            startBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoBtn.disabled = true;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = false;
+        }
+
+        // Event Listeners
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value); 
+            speedValueSpan.textContent = `${animationSpeed}ms`;
+        });
+        
+        startBtn.addEventListener('click', startExecution_Fractional);
+        
+        stepBtn.addEventListener('click', async () => {
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                isPaused = true; 
+                addLog("Initialized for stepping. Click Step to proceed.");
+                startBtn.disabled = true;
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resetBtn.disabled = false;
+                return;
+            }
+
+            if (isSolving && isPaused) { 
+                 const moreSteps = await processSingleStep_Fractional();
+                 if (!moreSteps) { 
+                    // Finalize is called by processSingleStep if it returns false
+                 } else { 
+                    stepBtn.disabled = false; 
+                    autoBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                 }
+            }
+        });
+
+        autoBtn.addEventListener('click', () => { 
+            if (!isSolving) { 
+                if (!initializeAlgorithmState()) return;
+                isSolving = true;
+                startAutoplay_Fractional();
+            } else if (isSolving && isPaused) { 
+                startAutoplay_Fractional();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            if (isSolving && !isPaused) {
+                pauseAutoplay_Fractional();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetAll);
+        
+        // Initial call
+        resetAll();
+
+    </script>
+</body>
+</html>

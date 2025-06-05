@@ -18,24 +18,23 @@
         }
         .page-header {
             background-color: #ffffff;
-            padding: 15px 30px; /* Adjusted padding back for text logo */
+            padding: 15px 30px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border-bottom: 1px solid #dee2e6;
             text-align: left;
             display: flex;
             align-items: center;
         }
-        .logo-container { /* This class can be repurposed for text or removed if not needed */
+        .logo-container {
             display: inline-flex;
             align-items: center;
         }
-        .logo-text { /* New class for the text logo */
+        .logo-text {
             color: #343a40;
             font-weight: 400;
-            font-size: 1.6em; /* Matches previous H1 styling for logo */
+            font-size: 1.6em;
             margin: 0;
         }
-        /* .logo-container img CSS rule is no longer needed */
 
         .main-content-area {
             display: flex;
@@ -46,8 +45,8 @@
             box-sizing: border-box;
         }
         .left-column {
-            width: 260px; /* Reduced width */
-            min-width: 220px; /* Reduced min-width */
+            width: 260px;
+            min-width: 220px;
             padding: 20px;
             background-color: #ffffff;
             border-radius: 6px;
@@ -55,15 +54,14 @@
             border: 1px solid #dee2e6;
             overflow-y: auto;
             height: fit-content;
-            max-height: calc(100vh - 100px); /* Adjust if header height changes */
+            max-height: calc(100vh - 100px);
         }
-        .right-column {
+        .right-column { /* Updated styles for right column */
             flex-grow: 1;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid #dee2e6;
+            /* background-color: #ffffff; Removed white background */
+            /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); Removed shadow */
+            /* border: 1px solid #dee2e6; Removed border */
+            /* padding: 20px; Removed padding, iframe will take full space */
             display: flex;
             flex-direction: column;
         }
@@ -74,7 +72,7 @@
             margin-top: 20px;
             margin-bottom: 12px;
             font-weight: 500;
-            font-size: 1em; /* Further reduced font size for group names */
+            font-size: 1em;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
@@ -136,25 +134,27 @@
             background-color: #ffffff;
             margin-top: auto;
         }
-        #visualizationFrame {
+        #visualizationFrame { /* Updated styles for iframe */
             width: 100%;
-            height: calc(100vh - 160px); /* Adjust if header height changes */
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            background-color: #fff;
+            height: calc(100vh - 100px); /* Adjusted to fill available height better */
+            /* border: 1px solid #ced4da; Removed border */
+            border: none; /* Explicitly no border */
+            border-radius: 0; /* Removed border-radius */
+            background-color: transparent; /* Make iframe background transparent */
         }
-        .iframe-placeholder {
+        .iframe-placeholder { /* Updated styles for placeholder */
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: calc(100vh - 160px); /* Adjust if header height changes */
-            background-color: #f8f9fa;
-            border: 1px dashed #ced4da;
-            border-radius: 4px;
-            color: #6c757d;
+            height: calc(100vh - 100px); /* Match iframe height */
+            /* background-color: #f8f9fa; No specific background, will inherit or be transparent */
+            /* border: 1px dashed #ced4da; Removed border */
+            color: #6c757d; /* Keep text color for visibility */
             font-size: 1em;
             flex-grow: 1;
+            padding: 20px; /* Added some padding so text is not at the edges */
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -162,25 +162,26 @@
                 flex-direction: column;
             }
             .left-column {
-                width: 100%; /* Full width for left column on small screens */
-                min-width: unset; /* Remove min-width for stacked layout */
+                width: 100%;
+                min-width: unset;
                 max-height: none;
                 margin-bottom: 20px;
             }
             .right-column {
                 width: 100%;
+                padding: 0; /* No padding when stacked if iframe takes full width */
             }
             #visualizationFrame, .iframe-placeholder {
-                height: 500px;
+                height: 500px; /* Or a more dynamic height if preferred */
             }
             .page-header {
-                padding: 15px 20px; /* Adjusted padding for smaller screens */
+                padding: 15px 20px;
             }
             .logo-text {
-                font-size: 1.4em; /* Slightly smaller logo text on small screens */
+                font-size: 1.4em;
             }
             h2.category-toggle {
-                font-size: 1.1em; /* Adjust group name font on smaller screens if needed */
+                font-size: 1.1em;
             }
         }
     </style>
@@ -188,7 +189,6 @@
 <body>
     <header class="page-header">
         <div class="logo-container">
-            <!-- Replaced IMG with a SPAN for text logo -->
             <span class="logo-text">Visualizations</span>
         </div>
     </header>
@@ -205,7 +205,6 @@
                 <ul>
                     <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_DP_visualization.html">0-1 Knapsack (Dynamic Programming)</a></li>
                     <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_Branch_Bound.html">0-1 Knapsack (Branch and Bound)</a></li>
-                    <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_Backtracking.html">0-1 Knapsack (Backtracking)</a></li>
                     <li><a href="#" class="visualization-link" data-src="Fractional_Knapsack_Greedy.html">Fractional Knapsack (Greedy)</a></li>
                     <li><a href="#" class="visualization-link" data-src="Unbounded_Knapsack.html">Unbounded Knapsack (Dynamic Programming)</a></li>
                 </ul>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualization Project Index</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .page-header {
+            background-color: #ffffff;
+            padding: 15px 30px; /* Adjusted padding back for text logo */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }
+        .logo-container { /* This class can be repurposed for text or removed if not needed */
+            display: inline-flex;
+            align-items: center;
+        }
+        .logo-text { /* New class for the text logo */
+            color: #343a40;
+            font-weight: 400;
+            font-size: 1.6em; /* Matches previous H1 styling for logo */
+            margin: 0;
+        }
+        /* .logo-container img CSS rule is no longer needed */
+
+        .main-content-area {
+            display: flex;
+            flex-grow: 1;
+            padding: 20px;
+            gap: 20px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .left-column {
+            width: 260px; /* Reduced width */
+            min-width: 220px; /* Reduced min-width */
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #dee2e6;
+            overflow-y: auto;
+            height: fit-content;
+            max-height: calc(100vh - 100px); /* Adjust if header height changes */
+        }
+        .right-column {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+        h2.category-toggle {
+            color: #495057;
+            border-bottom: 1px solid #ced4da;
+            padding-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            font-size: 1em; /* Further reduced font size for group names */
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h2.category-toggle:first-of-type {
+             margin-top: 0;
+        }
+        .toggle-icon {
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .toggle-icon svg {
+            width: 10px;
+            height: 10px;
+            fill: currentColor;
+            transition: transform 0.2s ease-in-out;
+        }
+        h2.category-toggle.open .toggle-icon svg {
+            transform: rotate(90deg);
+        }
+        .collapsible-content {
+            display: none;
+            padding-left: 8px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 0;
+        }
+        li {
+            background-color: #ffffff;
+            margin-bottom: 6px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        li:hover {
+            background-color: #f1f3f5;
+        }
+        a.visualization-link {
+            text-decoration: none;
+            color: #343a40;
+            display: block;
+            padding: 10px 12px;
+            font-size: 0.85em;
+            transition: color 0.2s ease-in-out;
+        }
+        a.visualization-link:hover {
+            color: #000000;
+        }
+        .page-footer {
+            text-align: center;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.75em;
+            color: #6c757d;
+            background-color: #ffffff;
+            margin-top: auto;
+        }
+        #visualizationFrame {
+            width: 100%;
+            height: calc(100vh - 160px); /* Adjust if header height changes */
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .iframe-placeholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: calc(100vh - 160px); /* Adjust if header height changes */
+            background-color: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 4px;
+            color: #6c757d;
+            font-size: 1em;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 768px) {
+            .main-content-area {
+                flex-direction: column;
+            }
+            .left-column {
+                width: 100%; /* Full width for left column on small screens */
+                min-width: unset; /* Remove min-width for stacked layout */
+                max-height: none;
+                margin-bottom: 20px;
+            }
+            .right-column {
+                width: 100%;
+            }
+            #visualizationFrame, .iframe-placeholder {
+                height: 500px;
+            }
+            .page-header {
+                padding: 15px 20px; /* Adjusted padding for smaller screens */
+            }
+            .logo-text {
+                font-size: 1.4em; /* Slightly smaller logo text on small screens */
+            }
+            h2.category-toggle {
+                font-size: 1.1em; /* Adjust group name font on smaller screens if needed */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <div class="logo-container">
+            <!-- Replaced IMG with a SPAN for text logo -->
+            <span class="logo-text">Visualizations</span>
+        </div>
+    </header>
+
+    <div class="main-content-area">
+        <nav class="left-column">
+            <!-- Knapsack Problems Section -->
+            <h2 class="category-toggle">Knapsack Problems
+                <span class="toggle-icon">
+                    <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><polyline points="3,2 7,5 3,8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+            </h2>
+            <div class="collapsible-content">
+                <ul>
+                    <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_DP_visualization.html">0-1 Knapsack (Dynamic Programming)</a></li>
+                    <li><a href="#" class="visualization-link" data-src="0-1_Knapsack_Branch_Bound.html">0-1 Knapsack (Branch and Bound)</a></li>
+                    <li><a href="#" class="visualization-link" data-src="Fractional_Knapsack_Greedy.html">Fractional Knapsack (Greedy)</a></li>
+                    <li><a href="#" class="visualization-link" data-src="Unbounded_Knapsack.html">Unbounded Knapsack (Dynamic Programming)</a></li>
+                </ul>
+            </div>
+
+            <!-- Travelling Salesperson Problem (TSP) Section -->
+            <h2 class="category-toggle">Travelling Salesperson Problem (TSP)
+                <span class="toggle-icon">
+                    <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><polyline points="3,2 7,5 3,8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+            </h2>
+            <div class="collapsible-content">
+                <ul>
+                    <li><a href="#" class="visualization-link" data-src="TSP_Held-Karp.html">TSP (Held-Karp - Dynamic Programming)</a></li>
+                    <li><a href="#" class="visualization-link" data-src="TSP_Nearest_Neighbour_Heuristic.html">TSP (Nearest Neighbour Heuristic)</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="right-column">
+            <div id="iframePlaceholder" class="iframe-placeholder">
+                Select a visualization from the left menu to display it here.
+            </div>
+            <iframe id="visualizationFrame" style="display: none;"></iframe>
+        </main>
+    </div>
+
+    <footer class="page-footer">
+        <p>&copy; 2024-2025 Algorithm Visualization Project</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Collapsible sections logic
+            const toggles = document.querySelectorAll('.category-toggle');
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', function () {
+                    const content = this.nextElementSibling;
+                    if (content.style.display === 'block') {
+                        content.style.display = 'none';
+                        this.classList.remove('open');
+                    } else {
+                        content.style.display = 'block';
+                        this.classList.add('open');
+                    }
+                });
+            });
+
+            // Iframe loading logic
+            const visualizationLinks = document.querySelectorAll('.visualization-link');
+            const iframe = document.getElementById('visualizationFrame');
+            const iframePlaceholder = document.getElementById('iframePlaceholder');
+            let currentActiveLink = null;
+
+            visualizationLinks.forEach(link => {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const src = this.getAttribute('data-src');
+
+                    if (iframe && src) {
+                        iframePlaceholder.style.display = 'none';
+                        iframe.style.display = 'block';
+                        iframe.src = src;
+
+                        if (currentActiveLink) {
+                            currentActiveLink.style.fontWeight = 'normal';
+                            currentActiveLink.style.backgroundColor = '';
+                        }
+                        this.style.fontWeight = 'bold';
+                        this.style.backgroundColor = '#e9ecef';
+                        currentActiveLink = this;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

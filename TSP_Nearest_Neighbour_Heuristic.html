@@ -6,6 +6,7 @@
     <title>TSP - Nearest Neighbour Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -13,17 +14,20 @@
             color: #1e293b; /* slate-800 */
             font-size: 0.875rem;
         }
-        .container-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0; /* slate-200 */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+        .main-title {
+            font-size: 2.1rem; 
+        }
+        @media (min-width: 768px) { 
+            .main-title {
+                font-size: 2.5rem; 
+            }
         }
         .section-title {
             color: #334155; /* slate-700 */
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            font-size: 1.125rem;
+            font-size: 0.9rem; 
             font-weight: 600;
         }
         .label-text {
@@ -43,181 +47,291 @@
             box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
             outline: none;
         }
-        /* Button Styles from Knapsack Minimalist */
         .btn {
             padding: 0.5rem 1rem; 
-            border: 1px solid #cbd5e1; /* slate-300 default border */
+            border: 1px solid #cbd5e1; 
             transition: background-color 0.2s, color 0.2s;
             font-size: 0.75rem; 
-            border-radius: 0.375rem; /* rounded-md */
+            border-radius: 0.375rem; 
             font-weight: 500;
         }
         .btn-primary { 
-             background-color: #334155; /* slate-700 */
+             background-color: #334155; 
              color: white;
              border-color: #334155;
         }
         .btn-primary:hover {
-            background-color: #1e293b; /* slate-800 */
+            background-color: #1e293b; 
             border-color: #1e293b;
         }
         .btn-secondary { 
-            background-color: #f1f5f9; /* slate-100 */
-            color: #334155; /* slate-700 */
+            background-color: #f1f5f9; 
+            color: #334155; 
         }
         .btn-secondary:hover {
-            background-color: #e2e8f0; /* slate-200 */
+            background-color: #e2e8f0; 
         }
-        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled { /* Combined disabled styles */
+        .btn:disabled, .btn-secondary:disabled, .btn-primary:disabled, .btn-danger:disabled {
             background-color: #f8fafc !important; 
-            color: #94a3b8 !important; /* slate-400 */
+            color: #94a3b8 !important; 
             border-color: #e2e8f0 !important;
             cursor: not-allowed;
         }
          .btn-danger {
-            background-color: #475569; /* slate-600 */
+            background-color: #475569; 
             color: white;
             border-color: #475569;
         }
         .btn-danger:hover {
-            background-color: #334155; /* slate-700 */
+            background-color: #334155; 
             border-color: #334155;
         }
 
         #tsp-canvas {
             border: 1px solid #e2e8f0; /* slate-200 */
             cursor: crosshair;
-            background-color: #f8fafc; /* slate-50 */
+            background-color: #ffffff; 
             border-radius: 0.375rem; /* rounded-md */
+            width: 100%; /* Canvas takes full width of its parent */
+            height: 400px; /* Fixed height for the canvas drawing surface */
+            display: block; /* Good practice for canvas to avoid extra space */
         }
         .log-area {
-            background-color: #f1f5f9; /* slate-100 */
-            border: 1px solid #e2e8f0; /* slate-200 */
-            padding: 0.75rem;
-            min-height: 60px;
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            min-height: 0;
             font-size: 0.75rem;
             white-space: pre-wrap;
             line-height: 1.6;
-            max-height: 150px;
-            overflow-y: auto;
+            max-height: 0; 
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out, padding 0.5s ease-in-out;
+            margin-top: 0;
             border-radius: 0.375rem;
+        }
+        .log-area.expanded {
+            max-height: 200px; 
+            opacity: 1;
+            margin-top: 1rem; 
+            padding: 0.75rem; 
+            overflow-y: auto;
         }
         .log-entry {
             margin-bottom: 0.3em;
             padding-bottom: 0.3em;
-            border-bottom: 1px dashed #e2e8f0; /* slate-200 */
+            border-bottom: 1px dashed #e2e8f0; 
         }
         .log-entry:last-child {
             border-bottom: none;
             margin-bottom: 0;
         }
-        .accent-slate-500 { /* For range slider thumb */
+        .accent-slate-500 { 
              accent-color: #64748b; 
+        }
+        .code-visualization {
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.75rem; 
+            line-height: 1.6; 
+            max-height: 0; 
+            opacity: 0;
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
+            margin-top: 0;
+        }
+        .code-visualization.expanded {
+            max-height: 70vh; 
+            opacity: 1;
+            margin-top: 1rem; 
+            overflow-y: auto; 
+        }
+        .code-line {
+            padding: 0.15rem 0.5rem; 
+            border-radius: 0.125rem;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre; 
+        }
+        .python-keyword { color: #0ea5e9; }
+        .python-function { color: #2563eb; }
+        .python-parameters { color: #475569; }
+        .python-comment { color: #64748b; font-style: italic; }
+        .python-variable { color: #1e293b; }
+        .python-operator { color: #ec4899; }
+        .python-number { color: #f59e0b; }
+        
+        .highlight-code-active { background-color: #e2e8f0; }
+
+        .collapsible-title {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-title::after {
+            content: '[+]'; 
+            color: #64748b; 
+            font-size: 0.8em;
+            margin-left: 8px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .collapsible-title.expanded::after {
+            content: '[-]'; 
+        }
+        .content-section { 
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
         }
     </style>
 </head>
 <body>
-    <div class="container mx-auto max-w-4xl container-card p-4 md:p-8 my-8">
+    <div class="container mx-auto px-4 md:px-8 py-8">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">Travelling Salesperson Problem</h1>
+            <h1 class="main-title font-bold text-slate-700">Travelling Salesperson Problem</h1>
             <p class="text-md text-slate-500 mt-1">Nearest Neighbour Heuristic Visualization</p>
         </header>
 
-        <!-- Setup Section -->
-        <section id="setup-section" class="mb-6">
-            <h2 class="section-title">City Setup</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label for="num-cities" class="block label-text mb-1">Number of Random Cities:</label>
-                    <input type="number" id="num-cities" value="10" min="3" max="50" class="input-field block w-full">
-                </div>
-                <div class="md:col-span-2 flex items-end">
-                    <button id="generate-cities-btn" class="btn btn-secondary w-full">Generate Random Cities</button>
-                </div>
+        <!-- Main content area with two columns -->
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Left Column -->
+            <div class="md:w-3/5 space-y-6">
+                <section id="setup-section" class="content-section">
+                    <h2 class="section-title">City Setup</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="num-cities" class="block label-text mb-1">Number of Random Cities:</label>
+                            <input type="number" id="num-cities" value="10" min="3" max="30" class="input-field block w-full">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="generate-cities-btn" class="btn btn-secondary w-full">Generate Random Cities</button>
+                        </div>
+                    </div>
+                     <p class="text-xs text-slate-500">Alternatively, click on the canvas below to add cities manually.</p>
+                </section>
+        
+                <section id="controls-section" class="content-section">
+                    <h2 class="section-title">Solver Controls</h2>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <button id="start-btn" class="btn btn-primary">Start</button> 
+                        <button id="step-btn" class="btn btn-secondary" disabled>Step</button> 
+                        <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button>  
+                        <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button> 
+                        <button id="reset-btn" class="btn btn-danger">Reset</button> 
+                         <div class="flex items-center md:ml-auto mt-2 md:mt-0">
+                            <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
+                            <input type="range" id="tsp-speed-slider" min="50" max="1000" value="300" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
+                            <span id="tsp-speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">300ms</span>
+                        </div>
+                    </div>
+                </section>
+        
+                <section class="content-section">
+                    <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
+                    <canvas id="tsp-canvas"></canvas> {/* Removed fixed width and height attributes */}
+                </section>
+        
+                <section class="content-section">
+                    <h3 class="section-title mb-2">Results</h3>
+                    <p id="tsp-path-output" class="text-slate-700 text-sm">Path: <span class="font-semibold">-</span></p>
+                    <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
+                </section>
             </div>
-             <p class="text-xs text-slate-500">Alternatively, click on the canvas below to add cities manually.</p>
-        </section>
 
-        <!-- Controls Section -->
-        <section id="controls-section" class="mb-6">
-            <h2 class="section-title">Solver Controls</h2>
-            <div class="flex flex-wrap gap-2 items-center">
-                <button id="start-btn" class="btn btn-primary">Start</button> 
-                <button id="step-btn" class="btn btn-secondary" disabled>Step</button> 
-                <button id="auto-btn" class="btn btn-secondary" disabled>Auto</button>  
-                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button> 
-                <button id="reset-btn" class="btn btn-danger">Reset</button> 
-                 <div class="flex items-center md:ml-auto mt-2 md:mt-0">
-                    <label for="tsp-speed-slider" class="mr-2 label-text">Animation Speed:</label>
-                    <input type="range" id="tsp-speed-slider" min="50" max="1000" value="300" step="50" class="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-500">
-                    <span id="tsp-speed-value" class="ml-2 text-xs text-slate-500 w-12 text-right">300ms</span>
-                </div>
+             <!-- Right Column -->
+            <div class="md:w-2/5 space-y-6">
+                <section class="content-section">
+                     <h3 id="log-title" class="section-title collapsible-title">Log</h3>
+                    <div id="tsp-log-area" class="log-area">
+                        <p class="text-slate-400">Log messages will appear here...</p>
+                    </div>
+                </section>
+                <section class="content-section">
+                    <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
+                    <div id="code-visualization-area-nn" class="code-visualization expanded">
+                        <div class="code-line" data-line-nn="1"><span class="python-keyword">def</span> <span class="python-function">nearest_neighbour_tsp</span>(<span class="python-parameters">cities, start_node_idx=0</span>):</div>
+                        <div class="code-line" data-line-nn="2">  <span class="python-variable">num_cities</span> <span class="python-operator">=</span> <span class="python-function">len</span>(<span class="python-variable">cities</span>)</div>
+                        <div class="code-line" data-line-nn="3">  <span class="python-keyword">if</span> <span class="python-variable">num_cities</span> <span class="python-operator">==</span> <span class="python-number">0</span>: <span class="python-keyword">return</span> [], <span class="python-number">0</span></div>
+                        <div class="code-line" data-line-nn="4"> </div>
+                        <div class="code-line" data-line-nn="5">  <span class="python-variable">visited</span> <span class="python-operator">=</span> [<span class="python-keyword">False</span>] * <span class="python-variable">num_cities</span></div>
+                        <div class="code-line" data-line-nn="6">  <span class="python-variable">tour</span> <span class="python-operator">=</span> [<span class="python-variable">start_node_idx</span>]</div>
+                        <div class="code-line" data-line-nn="7">  <span class="python-variable">visited</span>[<span class="python-variable">start_node_idx</span>] <span class="python-operator">=</span> <span class="python-keyword">True</span></div>
+                        <div class="code-line" data-line-nn="8">  <span class="python-variable">total_distance</span> <span class="python-operator">=</span> <span class="python-number">0</span></div>
+                        <div class="code-line" data-line-nn="9"> </div>
+                        <div class="code-line" data-line-nn="10"> <span class="python-keyword">for</span> _ <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-variable">num_cities</span> <span class="python-operator">-</span> <span class="python-number">1</span>):</div>
+                        <div class="code-line" data-line-nn="11">   <span class="python-variable">current_city_idx</span> <span class="python-operator">=</span> <span class="python-variable">tour</span>[<span class="python-operator">-</span><span class="python-number">1</span>]</div>
+                        <div class="code-line" data-line-nn="12">   <span class="python-variable">nearest_city_idx</span> <span class="python-operator">=</span> <span class="python-operator">-</span><span class="python-number">1</span></div>
+                        <div class="code-line" data-line-nn="13">   <span class="python-variable">min_dist</span> <span class="python-operator">=</span> <span class="python-function">float</span>(<span class="python-string">'inf'</span>)</div>
+                        <div class="code-line" data-line-nn="14"> </div>
+                        <div class="code-line" data-line-nn="15">   <span class="python-keyword">for</span> <span class="python-variable">next_city_idx</span> <span class="python-keyword">in</span> <span class="python-function">range</span>(<span class="python-variable">num_cities</span>):</div>
+                        <div class="code-line" data-line-nn="16">     <span class="python-keyword">if</span> <span class="python-keyword">not</span> <span class="python-variable">visited</span>[<span class="python-variable">next_city_idx</span>]:</div>
+                        <div class="code-line" data-line-nn="17">       <span class="python-variable">dist</span> <span class="python-operator">=</span> <span class="python-function">calculate_distance</span>(<span class="python-variable">cities</span>[<span class="python-variable">current_city_idx</span>], <span class="python-variable">cities</span>[<span class="python-variable">next_city_idx</span>])</div>
+                        <div class="code-line" data-line-nn="18">       <span class="python-keyword">if</span> <span class="python-variable">dist</span> <span class="python-operator">&lt;</span> <span class="python-variable">min_dist</span>:</div>
+                        <div class="code-line" data-line-nn="19">         <span class="python-variable">min_dist</span> <span class="python-operator">=</span> <span class="python-variable">dist</span></div>
+                        <div class="code-line" data-line-nn="20">         <span class="python-variable">nearest_city_idx</span> <span class="python-operator">=</span> <span class="python-variable">next_city_idx</span></div>
+                        <div class="code-line" data-line-nn="21"> </div>
+                        <div class="code-line" data-line-nn="22">   <span class="python-keyword">if</span> <span class="python-variable">nearest_city_idx</span> <span class="python-operator">!=</span> <span class="python-operator">-</span><span class="python-number">1</span>:</div>
+                        <div class="code-line" data-line-nn="23">     <span class="python-variable">tour.append</span>(<span class="python-variable">nearest_city_idx</span>)</div>
+                        <div class="code-line" data-line-nn="24">     <span class="python-variable">visited</span>[<span class="python-variable">nearest_city_idx</span>] <span class="python-operator">=</span> <span class="python-keyword">True</span></div>
+                        <div class="code-line" data-line-nn="25">     <span class="python-variable">total_distance</span> <span class="python-operator">+=</span> <span class="python-variable">min_dist</span></div>
+                        <div class="code-line" data-line-nn="26"> </div>
+                        <div class="code-line" data-line-nn="27"> <span class="python-comment"># Return to start city</span></div>
+                        <div class="code-line" data-line-nn="28"> <span class="python-keyword">if</span> <span class="python-variable">num_cities</span> <span class="python-operator">></span> <span class="python-number">0</span>:</div>
+                        <div class="code-line" data-line-nn="29">    <span class="python-variable">total_distance</span> <span class="python-operator">+=</span> <span class="python-function">calculate_distance</span>(<span class="python-variable">cities</span>[<span class="python-variable">tour</span>[<span class="python-operator">-</span><span class="python-number">1</span>]], <span class="python-variable">cities</span>[<span class="python-variable">start_node_idx</span>])</div>
+                        <div class="code-line" data-line-nn="30">    <span class="python-variable">tour.append</span>(<span class="python-variable">start_node_idx</span>) <span class="python-comment"># Complete the cycle in tour representation</span></div>
+                        <div class="code-line" data-line-nn="31"> </div>
+                        <div class="code-line" data-line-nn="32"> <span class="python-keyword">return</span> <span class="python-variable">tour</span>, <span class="python-variable">total_distance</span></div>
+                    </div>
+                </section>
             </div>
-        </section>
-
-        <!-- Visualization Canvas -->
-        <section class="mb-6">
-            <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
-            <canvas id="tsp-canvas" width="700" height="400"></canvas>
-        </section>
-
-        <!-- Log and Results Section -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="section-title mb-2">Log</h3>
-                <div id="tsp-log-area" class="log-area">
-                    <p class="text-slate-400">Log messages will appear here...</p>
-                </div>
-            </div>
-            <div>
-                <h3 class="section-title mb-2">Results</h3>
-                <p id="tsp-path-output" class="text-slate-700 text-sm">Path: <span class="font-semibold">-</span></p>
-                <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
-            </div>
-        </section>
-
-        <footer class="mt-8 pt-4 border-t border-slate-200 text-center">
-            <p class="text-xs text-slate-400">&copy; TSP Visualizer</p>
-        </footer>
+        </div>
     </div>
 
     <script>
+        // DOM Elements
         const canvas = document.getElementById('tsp-canvas');
         const ctx = canvas.getContext('2d');
         const numCitiesInput = document.getElementById('num-cities');
         const generateCitiesBtn = document.getElementById('generate-cities-btn');
-        
         const startBtn = document.getElementById('start-btn'); 
         const stepBtn = document.getElementById('step-btn');   
         const autoBtn = document.getElementById('auto-btn');     
         const pauseBtn = document.getElementById('pause-btn');   
         const resetBtn = document.getElementById('reset-btn'); 
-        
         const speedSlider = document.getElementById('tsp-speed-slider');
         const speedValueSpan = document.getElementById('tsp-speed-value');
         const logArea = document.getElementById('tsp-log-area');
+        const logTitle = document.getElementById('log-title');
+        const codeVisualizationAreaNN = document.getElementById('code-visualization-area-nn');
+        const codeTitle = document.getElementById('code-title');
         const pathOutput = document.getElementById('tsp-path-output').querySelector('span');
         const distanceOutput = document.getElementById('tsp-distance-output').querySelector('span');
 
+        // Global state for TSP Nearest Neighbour
         let cities = []; 
-        let tour = []; // Stores indices of cities in the tour
+        let tour = []; 
         let totalDistance = 0;
-        
-        let isSolving = false; 
-        let isPaused = false; 
-        let animationSpeed = 300;
-        let cityIdCounter = 0;
-        
-        let currentCityIndex_TSP; // For TSP state
-        let visited_TSP_Map; // Map for O(1) lookup: city_index -> boolean
-        let tsp_step_count; // How many cities added to tour so far
-        let autoplayIntervalId_TSP = null;
+        let isSolving_NN = false; 
+        let isPaused_NN = false;  
+        let animationSpeed_NN = 300;
+        let cityIdCounter_NN = 0; 
+        let currentCityIndex_NN; 
+        let visited_NN_Map;    
+        let tsp_step_count_NN; 
+        let autoplayTimeoutId_NN = null; 
 
-
+        // Drawing Constants
         const CITY_RADIUS = 6; 
         const GRID_SPACING = 50;
         const GRID_COLOR = "#e2e8f0"; 
-
         const CITY_COLOR_UNVISITED = "#64748b"; 
         const CITY_TEXT_UNVISITED = "#f8fafc";   
         const CITY_COLOR_VISITED = "#94a3b8";   
@@ -227,422 +341,379 @@
         const CITY_COLOR_START = "#cbd5e1";     
         const CITY_BORDER_START = "#475569";  
         const CITY_TEXT_START = "#1e293b";      
-        
         const PATH_COLOR_DEFAULT = "#94a3b8";   
         const PATH_COLOR_HIGHLIGHT = "#1e293b"; 
 
+        // Utility: Sleep function
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
+        // UI: Add log message
         function addLog(message) {
             const entry = document.createElement('div');
             entry.className = 'log-entry';
             entry.textContent = message;
-            if (logArea.firstChild && logArea.firstChild.textContent === "Log messages will appear here...") {
+            if (logArea.firstChild && logArea.firstChild.textContent.includes("Log messages will appear here")) {
                 logArea.innerHTML = '';
             }
             logArea.appendChild(entry);
             logArea.scrollTop = logArea.scrollHeight;
         }
 
+        // UI: Clear and highlight code lines
+        function clearCodeHighlights_NN() {
+            if(codeVisualizationAreaNN) {
+                const lines = codeVisualizationAreaNN.querySelectorAll('.code-line');
+                lines.forEach(line => line.classList.remove('highlight-code-active'));
+            }
+        }
+        function highlightCodeLine_NN(lineNumber, type = 'active') {
+            clearCodeHighlights_NN();
+            if(codeVisualizationAreaNN) {
+                const line = codeVisualizationAreaNN.querySelector(`.code-line[data-line-nn="${lineNumber}"]`);
+                if (line) line.classList.add(`highlight-code-${type}`);
+            }
+        }
+
+        // Canvas Resizing and Drawing Functions
+        function resizeCanvasAndRedraw() {
+            // Set the internal resolution of the canvas to match its displayed size
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight; // This will be 400px due to CSS
+
+            // Important: After resizing, redraw everything
+            redrawCanvasWithCurrentTour();
+        }
+
+
         function drawGrid() {
             ctx.beginPath();
             ctx.strokeStyle = GRID_COLOR;
             ctx.lineWidth = 0.5; 
-
-            for (let x = GRID_SPACING; x < canvas.width; x += GRID_SPACING) {
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-            }
-            for (let y = GRID_SPACING; y < canvas.height; y += GRID_SPACING) {
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-            }
+            for (let x = GRID_SPACING; x < canvas.width; x += GRID_SPACING) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+            for (let y = GRID_SPACING; y < canvas.height; y += GRID_SPACING) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
             ctx.stroke();
             ctx.closePath();
         }
 
         function drawCities() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid(); 
+            // drawGrid(); // Optional: Draw grid if desired
 
-            cities.forEach((city, index) => { // Use index directly
+            cities.forEach((city, index) => {
                 ctx.beginPath();
                 ctx.arc(city.x, city.y, CITY_RADIUS, 0, Math.PI * 2);
-
                 let fillColor = CITY_COLOR_UNVISITED;
-                let textColor = CITY_TEXT_UNVISITED; // Default for unvisited
+                let textColor = CITY_TEXT_UNVISITED; 
                 let strokeStyle = null; 
+                const isStartCity = tour.length > 0 && index === tour[0];
                 
-                const isStartCity = index === tour[0]; // Check if this city is the start of the current tour
-                
-                if (isStartCity && visited_TSP_Map && visited_TSP_Map.has(index)) { // Visited start city
-                    fillColor = CITY_COLOR_START;
-                    textColor = CITY_TEXT_START;
-                    strokeStyle = CITY_BORDER_START;
-                } else if (index === currentCityIndex_TSP) { // Current city in processing
-                    fillColor = CITY_COLOR_CURRENT;
-                    textColor = CITY_TEXT_CURRENT;
-                } else if (visited_TSP_Map && visited_TSP_Map.has(index)) { // Other visited cities
-                    fillColor = CITY_COLOR_VISITED;
-                    textColor = CITY_TEXT_VISITED;
+                if (isStartCity && visited_NN_Map && visited_NN_Map.has(index)) { 
+                    fillColor = CITY_COLOR_START; textColor = CITY_TEXT_START; strokeStyle = CITY_BORDER_START;
+                } else if (index === currentCityIndex_NN) { 
+                    fillColor = CITY_COLOR_CURRENT; textColor = CITY_TEXT_CURRENT;
+                } else if (visited_NN_Map && visited_NN_Map.has(index)) { 
+                    fillColor = CITY_COLOR_VISITED; textColor = CITY_TEXT_VISITED;
                 }
-                // Else, it's unvisited, uses default unvisited colors.
                 
-                ctx.fillStyle = fillColor;
-                ctx.fill();
-                if (strokeStyle) {
-                    ctx.strokeStyle = strokeStyle;
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                }
+                ctx.fillStyle = fillColor; ctx.fill();
+                if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = 1.5; ctx.stroke(); }
                 ctx.closePath();
-
-                ctx.fillStyle = textColor;
-                ctx.font = "9px Inter"; 
-                ctx.textAlign = "center";
+                ctx.fillStyle = textColor; ctx.font = "9px Inter"; ctx.textAlign = "center";
                 ctx.fillText(city.id, city.x, city.y + CITY_RADIUS + 8); 
             });
         }
 
         function drawCurrentTourPath() { 
-            if (tour.length < 2) return;
+            if (!cities || cities.length === 0 || !tour || tour.length < 2) return; // Add checks for cities array
+            if (!cities[tour[0]]) return; // Ensure first city in tour exists
 
-            ctx.strokeStyle = PATH_COLOR_DEFAULT;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
+            ctx.strokeStyle = PATH_COLOR_DEFAULT; ctx.lineWidth = 1.5; ctx.beginPath();
             ctx.moveTo(cities[tour[0]].x, cities[tour[0]].y);
             for (let i = 1; i < tour.length; i++) {
-                if (cities[tour[i]]) { 
-                    ctx.lineTo(cities[tour[i]].x, cities[tour[i]].y);
-                }
+                if (cities[tour[i]]) ctx.lineTo(cities[tour[i]].x, cities[tour[i]].y);
             }
             ctx.stroke();
-
-            // If it's the final tour (all cities visited), draw return to start
-            if (tsp_step_count >= cities.length && tour.length > 0 && cities[tour[0]]) { 
-                 ctx.lineTo(cities[tour[0]].x, cities[tour[0]].y);
-                 ctx.stroke();
-            }
         }
-
+        
         function redrawCanvasWithCurrentTour() {
+            if (!ctx) return; // Ensure context is available
             drawCities();
             drawCurrentTourPath();
         }
         
-        function highlightSegment(cityIndex1, cityIndex2) {
+        function highlightSegment(cityIndex1, cityIndex2, isFinalSegment = false) {
             if (cityIndex1 === undefined || cityIndex2 === undefined || !cities[cityIndex1] || !cities[cityIndex2]) return;
-            redrawCanvasWithCurrentTour(); // Redraw existing cities and tour path
-            ctx.strokeStyle = PATH_COLOR_HIGHLIGHT;
-            ctx.lineWidth = 2; 
-            ctx.beginPath();
+            redrawCanvasWithCurrentTour(); 
+            ctx.strokeStyle = PATH_COLOR_HIGHLIGHT; ctx.lineWidth = 2; ctx.beginPath();
             ctx.moveTo(cities[cityIndex1].x, cities[cityIndex1].y);
             ctx.lineTo(cities[cityIndex2].x, cities[cityIndex2].y);
             ctx.stroke();
         }
 
+        // Event Listeners for City Setup
         canvas.addEventListener('click', (event) => {
-            if (isSolving) return;
+            if (isSolving_NN) return;
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
-            cities.push({ x, y, id: ++cityIdCounter }); // Removed visited, isCurrent from here
-            drawCities(); // Just draw cities, no tour yet
-            addLog(`Added city ${cityIdCounter} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+            cities.push({ x, y, id: cityIdCounter_NN++ }); 
+            redrawCanvasWithCurrentTour(); // Use redraw that includes current tour if any
+            addLog(`Added city ${cityIdCounter_NN-1} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
         });
 
         generateCitiesBtn.addEventListener('click', () => {
-            if (isSolving) return;
-            cities = [];
-            cityIdCounter = 0;
+            if (isSolving_NN) return;
+            cities = []; cityIdCounter_NN = 0;
             const num = parseInt(numCitiesInput.value);
             for (let i = 0; i < num; i++) {
                 cities.push({
                     x: Math.random() * (canvas.width - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5), 
                     y: Math.random() * (canvas.height - 2 * (CITY_RADIUS + 5)) + (CITY_RADIUS + 5),
-                    id: ++cityIdCounter
+                    id: cityIdCounter_NN++
                 });
             }
-            resetSolutionFull(false); // Reset solution but not cities
-            drawCities();
+            resetSolutionUI_NN(false); 
+            redrawCanvasWithCurrentTour();
             addLog(`Generated ${num} random cities.`);
         });
         
-        resetBtn.addEventListener('click', () => resetSolutionFull(true));
+        // Algorithm State and Control
+        function initializeTSPState_NN() {
+            tour = []; totalDistance = 0;
+            visited_NN_Map = new Map(); 
+            tsp_step_count_NN = 0;
 
-        speedSlider.addEventListener('input', (e) => {
-            animationSpeed = parseInt(e.target.value);
-            speedValueSpan.textContent = `${animationSpeed}ms`;
-        });
-        
-        function initializeTSPState() {
-            tour = [];
-            totalDistance = 0;
-            visited_TSP_Map = new Map();
-            tsp_step_count = 0;
+            if (cities.length === 0) { addLog("Error: No cities to start."); return false; }
 
-            if (cities.length === 0) return false;
-
-            currentCityIndex_TSP = 0; // Start with the first city (index 0)
-            visited_TSP_Map.set(currentCityIndex_TSP, true);
-            tour.push(currentCityIndex_TSP);
-            tsp_step_count = 1;
+            currentCityIndex_NN = 0; 
+            visited_NN_Map.set(currentCityIndex_NN, true);
+            tour.push(currentCityIndex_NN);
+            tsp_step_count_NN = 1;
             
-            pathOutput.textContent = "-";
-            distanceOutput.textContent = "-";
-            logArea.innerHTML = '';
-            addLog(`TSP Initialized. Starting at City ${cities[currentCityIndex_TSP].id}.`);
+            pathOutput.textContent = "-"; distanceOutput.textContent = "-";
+            logArea.innerHTML = ''; 
+            addLog(`TSP Initialized. Starting at City ${cities[currentCityIndex_NN].id}.`);
+            highlightCodeLine_NN(5); 
             redrawCanvasWithCurrentTour();
             return true;
         }
 
-
-        function resetSolutionUI(){ 
-            tour = [];
-            totalDistance = 0;
-             if (cities) { // Only if cities exist
-                cities.forEach(c => { 
-                    if(c) { // Check if city object itself is defined
-                        c.visited = false; 
-                        c.isCurrent = false;
-                    }
-                });
+        function resetSolutionUI_NN(clearCityData = true){ 
+            tour = []; totalDistance = 0;
+             if (cities && !clearCityData) { 
+                // cities.forEach(c => { if(c) { c.visited = false; c.isCurrent = false;} }); // Not strictly needed as visual state is in currentCityIndex_NN and visited_NN_Map
+            } else if (clearCityData) {
+                cities = []; cityIdCounter_NN = 0;
             }
-            currentCityIndex_TSP = undefined;
-            visited_TSP_Map = new Map();
-            tsp_step_count = 0;
-
-            pathOutput.textContent = "-";
-            distanceOutput.textContent = "-";
+            currentCityIndex_NN = undefined;
+            visited_NN_Map = new Map();
+            tsp_step_count_NN = 0;
+            pathOutput.textContent = "-"; distanceOutput.textContent = "-";
             redrawCanvasWithCurrentTour();
         }
 
-        function resetSolutionFull(clearCityData = true) { 
-            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
-            autoplayIntervalId_TSP = null;
+        function resetAll_NN() { 
+            if (autoplayTimeoutId_NN) clearTimeout(autoplayTimeoutId_NN);
+            autoplayTimeoutId_NN = null;
+            isSolving_NN = false; isPaused_NN = false;
             
-            isSolving = false;
-            isPaused = false;
-            
-            if(clearCityData){
-                cities = []; 
-                cityIdCounter = 0;
-            }
-            resetSolutionUI(); 
+            resetSolutionUI_NN(true); 
 
-            if(clearCityData) {
-                 logArea.innerHTML = '<p class="text-slate-400">Log messages will appear here...</p>'; 
-                 addLog("System reset. Add or generate cities.");
-            }
+            logArea.innerHTML = '<p class="text-slate-400">Log messages will appear here...</p>'; 
+            addLog("System reset. Add or generate cities.");
+            clearCodeHighlights_NN();
 
-
-            startBtn.disabled = false;
-            generateCitiesBtn.disabled = false;
-            stepBtn.disabled = true;
-            autoBtn.disabled = true;
-            pauseBtn.disabled = true;
-            resetBtn.disabled = false; 
+            startBtn.disabled = false; generateCitiesBtn.disabled = false;
+            stepBtn.disabled = true; autoBtn.disabled = true; pauseBtn.disabled = true;
+            resizeCanvasAndRedraw(); // Ensure canvas is sized correctly on reset
         }
         
         function distance(cityIdx1, cityIdx2) {
-            const city1 = cities[cityIdx1];
-            const city2 = cities[cityIdx2];
+            const city1 = cities[cityIdx1]; const city2 = cities[cityIdx2];
             if (!city1 || !city2) return Infinity;
-            const dx = city1.x - city2.x;
-            const dy = city1.y - city2.y;
+            const dx = city1.x - city2.x; const dy = city1.y - city2.y;
             return Math.sqrt(dx * dx + dy * dy);
         }
         
-        async function processSingleTSPStep() {
-            if (tsp_step_count >= cities.length) { // All cities visited
-                if (cities.length > 0 && !visited_TSP_Map.has(tour[0])) { // Ensure not already finalized
-                    // Final step: return to start
-                    const lastCityInTourIdx = tour[tour.length - 1];
+        async function processSingleTSPStep_NN() {
+            if (!isSolving_NN) return false;
+
+            if (tsp_step_count_NN >= cities.length) { 
+                highlightCodeLine_NN(28);
+                const lastCityInTourIdx = tour[tour.length - 1];
+                if (cities.length > 0 && tour.length > 0 && cities[tour[0]] && lastCityInTourIdx !== undefined) { 
                     const distToStart = distance(lastCityInTourIdx, tour[0]);
-                    
-                    highlightSegment(lastCityInTourIdx, tour[0]);
-                    await sleep(animationSpeed);
-
+                    highlightSegment(lastCityInTourIdx, tour[0], true); 
+                    await sleep(animationSpeed_NN);
                     totalDistance += distToStart;
-                    visited_TSP_Map.set(tour[0], true); // Mark start as "re-visited" to complete tour
-                    
+                    tour.push(tour[0]); 
                     addLog(`Returning to start City ${cities[tour[0]].id}. Dist: ${distToStart.toFixed(2)}. Tour complete.`);
-                    if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = false;
-                    currentCityIndex_TSP = tour[0]; // Back to start
-                    redrawCanvasWithCurrentTour();
+                    if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false;
+                    currentCityIndex_NN = tour[0]; 
+                    redrawCanvasWithCurrentTour(); 
                 }
-                finalizeTSPSolution();
-                return false; // No more steps
+                finalizeTSPSolution_NN();
+                return false; 
             }
-
-            let nearestCityIndex = -1;
-            let minDist = Infinity;
-
-            addLog(`Current city: ${cities[currentCityIndex_TSP].id}. Finding nearest unvisited...`);
-
+            highlightCodeLine_NN(11);
+            let nearestCityIndex = -1; let minDist = Infinity;
+            addLog(`Current city: ${cities[currentCityIndex_NN].id}. Finding nearest unvisited...`);
+            highlightCodeLine_NN(15);
             for (let i = 0; i < cities.length; i++) {
-                if (!visited_TSP_Map.has(i)) {
-                    const d = distance(currentCityIndex_TSP, i);
+                highlightCodeLine_NN(16);
+                if (!visited_NN_Map.has(i)) {
+                    highlightCodeLine_NN(17);
+                    const d = distance(currentCityIndex_NN, i);
+                    highlightCodeLine_NN(18);
                     if (d < minDist) {
-                        minDist = d;
-                        nearestCityIndex = i;
+                        minDist = d; nearestCityIndex = i;
+                        highlightCodeLine_NN(19); await sleep(animationSpeed_NN/ (cities.length * 2 || 1)); 
+                        highlightCodeLine_NN(20); await sleep(animationSpeed_NN/ (cities.length * 2 || 1));
                     }
                 }
             }
-            
+            highlightCodeLine_NN(22);
             if (nearestCityIndex !== -1) {
-                highlightSegment(currentCityIndex_TSP, nearestCityIndex);
-                await sleep(animationSpeed);
+                highlightSegment(currentCityIndex_NN, nearestCityIndex);
+                await sleep(animationSpeed_NN);
 
                 totalDistance += minDist;
-                if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = false; 
+                if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false; 
+                currentCityIndex_NN = nearestCityIndex;
+                visited_NN_Map.set(currentCityIndex_NN, true);
+                // if (cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = true; // Visual update handled by drawCities
+                tour.push(currentCityIndex_NN);
+                tsp_step_count_NN++;
+                highlightCodeLine_NN(23); await sleep(animationSpeed_NN/3);
+                highlightCodeLine_NN(24); await sleep(animationSpeed_NN/3);
+                highlightCodeLine_NN(25); await sleep(animationSpeed_NN/3);
                 
-                currentCityIndex_TSP = nearestCityIndex;
-                visited_TSP_Map.set(currentCityIndex_TSP, true);
-                if (cities[currentCityIndex_TSP]) cities[currentCityIndex_TSP].isCurrent = true;
-                tour.push(currentCityIndex_TSP);
-                tsp_step_count++;
-                
-                addLog(`Nearest: City ${cities[currentCityIndex_TSP].id}. Dist: ${minDist.toFixed(2)}. Path: ${tour.map(idx => cities[idx].id).join('->')}`);
+                addLog(`Nearest: City ${cities[currentCityIndex_NN].id}. Dist: ${minDist.toFixed(2)}. Path: ${tour.map(idx => cities[idx].id).join('->')}`);
                 redrawCanvasWithCurrentTour(); 
             } else {
-                 addLog("No unvisited city found, but not all cities visited. This indicates an issue or premature end.");
-                 finalizeTSPSolution(); // Should not happen if logic is correct
+                 addLog("No unvisited city found, but not all cities visited. This may indicate an issue.");
+                 finalizeTSPSolution_NN(); 
                  return false;
             }
-            return true; // More steps possible
+            return true; 
         }
 
-
-        function startAutoplay_TSP() {
-            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP); // Clear existing
-            isPaused = false;
-            
-            startBtn.disabled = true;
-            stepBtn.disabled = true;
-            autoBtn.disabled = true;
-            pauseBtn.disabled = false;
-            resetBtn.disabled = false;
-            generateCitiesBtn.disabled = true;
-
+        function startAutoplay_NN() {
+            if (autoplayTimeoutId_NN) clearTimeout(autoplayTimeoutId_NN);
+            isPaused_NN = false;
+            startBtn.disabled = true; stepBtn.disabled = true; autoBtn.disabled = true;
+            pauseBtn.disabled = false; resetBtn.disabled = false; generateCitiesBtn.disabled = true;
             addLog("Autoplay started...");
             
-            autoplayIntervalId_TSP = setInterval(async () => {
-                if (isPaused) return; // Handled by pause button
-                
-                const moreSteps = await processSingleTSPStep();
-                if (!moreSteps) {
-                    pauseAutoplay_TSP(true); // Pass true to indicate it finished naturally
+            async function loop() {
+                if (isPaused_NN || !isSolving_NN) return;
+                try {
+                    const moreSteps = await processSingleTSPStep_NN();
+                    if (moreSteps && isSolving_NN && !isPaused_NN) {
+                         autoplayTimeoutId_NN = setTimeout(loop, animationSpeed_NN);
+                    } else if (!moreSteps && isSolving_NN) { 
+                        // finalizeTSPSolution_NN(); // Is called by processSingleTSPStep_NN
+                    }
+                } catch(e) {
+                    console.error("Error in TSP NN Autoplay:", e);
+                    addLog("RUNTIME ERROR: " + e.message);
+                    finalizeTSPSolution_NN();
                 }
-            }, animationSpeed * 1.1);
+            }
+            loop();
         }
 
-        function pauseAutoplay_TSP(finishedNaturally = false) {
-            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
-            autoplayIntervalId_TSP = null;
-            isPaused = true;
-
-            if (!finishedNaturally) {
-                addLog("Autoplay paused by user.");
-            }
-
-            if (isSolving) { // Only enable Step/Auto if solving was in progress
-                startBtn.disabled = true; // Start is disabled until reset
-                stepBtn.disabled = tsp_step_count >= cities.length && cities.length > 0; // Disable if tour complete
-                autoBtn.disabled = tsp_step_count >= cities.length && cities.length > 0;
-                pauseBtn.disabled = true;
-                resetBtn.disabled = false;
-                generateCitiesBtn.disabled = true; // Keep disabled if paused mid-solve
+        function pauseAutoplay_NN() {
+            if (autoplayTimeoutId_NN) clearTimeout(autoplayTimeoutId_NN);
+            autoplayTimeoutId_NN = null; isPaused_NN = true;
+            addLog("Autoplay paused by user.");
+            if (isSolving_NN) {
+                startBtn.disabled = true; 
+                stepBtn.disabled = tsp_step_count_NN >= cities.length && cities.length > 0;
+                autoBtn.disabled = tsp_step_count_NN >= cities.length && cities.length > 0;
+                pauseBtn.disabled = true; resetBtn.disabled = false; generateCitiesBtn.disabled = true;
             }
         }
         
-        function finalizeTSPSolution() {
-            if (autoplayIntervalId_TSP) clearInterval(autoplayIntervalId_TSP);
-            autoplayIntervalId_TSP = null;
-            isSolving = false;
-            isPaused = false; 
+        function finalizeTSPSolution_NN() {
+            if (autoplayTimeoutId_NN) clearTimeout(autoplayTimeoutId_NN);
+            autoplayTimeoutId_NN = null; isSolving_NN = false; isPaused_NN = false; 
 
-            pathOutput.textContent = tour.map(idx => cities[idx].id).join(' -> ') + (tour.length > 0 && cities[tour[0]] ? ` -> ${cities[tour[0]].id}` : "");
+            pathOutput.textContent = tour.map(idx => cities[idx]? cities[idx].id : '?').join(' -> ');
             distanceOutput.textContent = totalDistance.toFixed(2);
-            if (tour.length > 0) { // Only log if a tour was actually formed
+            if (tour.length > 1) { // Ensure tour actually formed before logging success
                 addLog(`TSP solution found. Total distance: ${totalDistance.toFixed(2)}`);
             } else if (cities.length > 0) {
-                addLog("TSP could not be completed (e.g. single city).");
+                addLog("TSP could not be completed (e.g. not enough cities or error).");
             }
+            clearCodeHighlights_NN();
 
-
-            startBtn.disabled = false;
-            stepBtn.disabled = true;
-            autoBtn.disabled = true;
-            pauseBtn.disabled = true;
-            resetBtn.disabled = false;
-            generateCitiesBtn.disabled = false;
+            startBtn.disabled = false; stepBtn.disabled = true; autoBtn.disabled = true;
+            pauseBtn.disabled = true; resetBtn.disabled = false; generateCitiesBtn.disabled = false;
         }
 
+        // Event Listeners for Controls
         startBtn.addEventListener('click', () => {
-            if (isSolving) return;
-            if (cities.length < 2) {
-                addLog("Add at least 2 cities to solve.");
-                return;
-            }
-            isSolving = true;
-            initializeTSPState();
-            startAutoplay_TSP();
+            if (isSolving_NN) return;
+            if (cities.length < 2) { addLog("Error: Add at least 2 cities to solve."); return; }
+            isSolving_NN = true;
+            if (!initializeTSPState_NN()) { isSolving_NN = false; return; } 
+            startAutoplay_NN();
         });
         
-        pauseBtn.addEventListener('click', () => {
-            if (isSolving && !isPaused) {
-                pauseAutoplay_TSP();
-            }
-        });
+        pauseBtn.addEventListener('click', () => { if (isSolving_NN && !isPaused_NN) pauseAutoplay_NN(); });
+        resetBtn.addEventListener('click', resetAll_NN);
 
         stepBtn.addEventListener('click', async () => {
-            if (!isSolving) { // If not solving, start it (paused initially for step)
-                if (cities.length < 2) { addLog("Add at least 2 cities."); return; }
-                isSolving = true;
-                isPaused = true; // Start in paused state for stepping
-                initializeTSPState();
+            if (!isSolving_NN) { 
+                if (cities.length < 2) { addLog("Error: Add at least 2 cities."); return; }
+                isSolving_NN = true; isPaused_NN = true; 
+                if (!initializeTSPState_NN()) { isSolving_NN = false; return; }
                 addLog("Initialized for stepping. Click Step to proceed.");
-                startBtn.disabled = true;
-                stepBtn.disabled = false;
-                autoBtn.disabled = false;
-                pauseBtn.disabled = true;
-                resetBtn.disabled = false;
-                generateCitiesBtn.disabled = true;
-                return; // Wait for next step click
+                startBtn.disabled = true; stepBtn.disabled = false; autoBtn.disabled = false;
+                pauseBtn.disabled = true; resetBtn.disabled = false; generateCitiesBtn.disabled = true;
+                return; 
             }
-
-            if (isSolving && isPaused) { // If paused and solving, perform one step
-                 const moreSteps = await processSingleTSPStep();
-                 if (!moreSteps) { // No more steps means it finished
-                    // Finalize is called by processSingleTSPStep if it returns false
-                 } else { // Still more steps, keep controls for paused stepping
-                    stepBtn.disabled = false;
-                    autoBtn.disabled = false;
-                    pauseBtn.disabled = true;
-                 }
+            if (isSolving_NN && isPaused_NN) { 
+                 const moreSteps = await processSingleTSPStep_NN();
+                 if (!moreSteps) { /* finalize called by step */ } 
+                 else { stepBtn.disabled = false; autoBtn.disabled = false; pauseBtn.disabled = true; }
             }
         });
 
         autoBtn.addEventListener('click', () => {
-             if (!isSolving) { // If not solving, effectively like Start
-                if (cities.length < 2) { addLog("Add at least 2 cities."); return; }
-                isSolving = true;
-                initializeTSPState();
-                startAutoplay_TSP();
-             } else if (isSolving && isPaused) { // If paused, resume autoplay
-                 startAutoplay_TSP();
+             if (!isSolving_NN) { 
+                if (cities.length < 2) { addLog("Error: Add at least 2 cities."); return; }
+                isSolving_NN = true; 
+                if(!initializeTSPState_NN()){ isSolving_NN = false; return; }
+                startAutoplay_NN();
+             } else if (isSolving_NN && isPaused_NN) { 
+                 startAutoplay_NN();
              }
         });
 
+        // Collapsible sections
+        logTitle.addEventListener('click', () => { 
+            logArea.classList.toggle('expanded');
+            logTitle.classList.toggle('expanded');
+        });
+        codeTitle.addEventListener('click', () => { 
+            codeVisualizationAreaNN.classList.toggle('expanded');
+            codeTitle.classList.toggle('expanded');
+        });
 
         // Initial setup
-        speedValueSpan.textContent = `${animationSpeed}ms`;
-        drawCities(); 
-        addLog("Canvas ready. Add cities by clicking or generate randomly.");
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed_NN = parseInt(e.target.value);
+            speedValueSpan.textContent = `${animationSpeed_NN}ms`;
+        });
+        
+        // Resize and draw when window size changes or on initial load
+        window.addEventListener('resize', resizeCanvasAndRedraw);
+        document.addEventListener('DOMContentLoaded', () => {
+            resetAll_NN(); // Call reset on load which includes resize
+        });
+
 
     </script>
 </body>

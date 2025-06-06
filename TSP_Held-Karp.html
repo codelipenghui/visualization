@@ -92,9 +92,12 @@
             cursor: crosshair;
             background-color: #ffffff; 
             border-radius: 0.375rem; 
+            width: 100%; /* Canvas takes full width of its parent */
+            height: 350px; /* Fixed height for the canvas drawing surface */
+            display: block; /* Good practice for canvas */
         }
         .dp-table-container { 
-            max-height: 300px; /* Adjusted max-height */
+            max-height: 300px; 
             overflow-y: auto; 
             overflow-x: auto; 
             border: 1px solid #e2e8f0;
@@ -120,12 +123,12 @@
         }
         .dp-table thead th:first-child { 
             left: 0;
-            z-index: 20; /* Higher z-index for top-left corner */
+            z-index: 20; 
         }
-        .dp-table tbody th { /* Sticky for row headers (subsets) */
+        .dp-table tbody th { 
             position: sticky;
             left: 0;
-            background-color: #f1f5f9; /* Ensure background for sticky row headers */
+            background-color: #f1f5f9; 
             z-index: 5;
         }
         .highlight-current { 
@@ -141,14 +144,14 @@
             background-color: #d1fae5; 
             outline: 1px solid #6ee7b7; 
         }
-        .highlight-calculated { /* Added for consistency */
+        .highlight-calculated { 
             background-color: #ffffff;
         }
-        .text-item-taken-in-dp { /* Renamed for consistency, used for good DP values */
+        .text-item-taken-in-dp { 
             color: #057a55; 
             font-weight: 600;
         }
-        .text-item-not-taken-in-dp { /* Renamed, used for infinity or bad DP values */
+        .text-item-not-taken-in-dp { 
             color: #6b7280;
         }
 
@@ -167,7 +170,7 @@
             border-radius: 0.375rem;
         }
         .log-area.expanded {
-            max-height: 200px; /* Adjusted max height */
+            max-height: 200px; 
             opacity: 1;
             margin-top: 1rem;
             padding: 0.75rem;
@@ -292,7 +295,7 @@
         
                 <section class="content-section">
                     <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
-                    <canvas id="tsp-canvas" width="700" height="350"></canvas>
+                    <canvas id="tsp-canvas"></canvas>
                 </section>
                 
                 <section id="dp-table-section" class="content-section">
@@ -307,16 +310,17 @@
                     <p id="tsp-path-output" class="text-slate-700 text-sm">Optimal Path: <span class="font-semibold">-</span></p>
                     <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
                 </section>
-            </div>
 
-             <!-- Right Column -->
-            <div class="md:w-2/5 space-y-6">
                 <section class="content-section">
                      <h3 id="log-title" class="section-title collapsible-title">Log</h3>
                     <div id="tsp-log-area" class="log-area">
                         <p class="text-slate-400">Log messages will appear here...</p>
                     </div>
                 </section>
+            </div>
+
+             <!-- Right Column -->
+            <div class="md:w-2/5 space-y-6">
                 <section class="content-section">
                     <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
                     <div id="code-visualization-area-hk" class="code-visualization expanded">
@@ -403,19 +407,19 @@
         let isSolving_HK = false;
         let isPaused_HK = false;
         let animationSpeed_HK = 500;
-        let autoplayTimeoutId_HK = null; // Using setTimeout for autoplay loop
+        let autoplayTimeoutId_HK = null; 
         let currentStepGenerator_HK = null; 
 
         // Constants for drawing
         const CITY_RADIUS = 7;
-        const GRID_SPACING = 50; // Keep if you want grid lines on canvas
+        const GRID_SPACING = 50; 
         const GRID_COLOR = "#e2e8f0"; 
-        const CITY_COLOR_DEFAULT = "#64748b"; // Default city color
-        const CITY_TEXT_COLOR = "#1e293b";    // Text color for city ID
-        const CITY_COLOR_START_END = "#cbd5e1";     // Color for start/end city (city 0)
-        const CITY_BORDER_START_END = "#475569";  // Border for start/end city
-        const PATH_COLOR_TOUR = "#334155";   // Color for final tour path
-        const PATH_COLOR_CALC_EDGE = "#60a5fa"; // Color for edge being calculated
+        const CITY_COLOR_DEFAULT = "#64748b"; 
+        const CITY_TEXT_COLOR = "#1e293b";    
+        const CITY_COLOR_START_END = "#cbd5e1";     
+        const CITY_BORDER_START_END = "#475569";  
+        const PATH_COLOR_TOUR = "#334155";   
+        const PATH_COLOR_CALC_EDGE = "#60a5fa"; 
 
         // Utility: Sleep function
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -451,7 +455,13 @@
             }
         }
         
-        // Canvas Drawing Functions
+        // Canvas Resizing and Drawing Functions
+        function resizeHeldKarpCanvasAndRedraw() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight; // This will be 350px due to CSS
+            redrawCanvas(); // Call the existing redraw function
+        }
+
         function drawGrid() {
             ctx.strokeStyle = GRID_COLOR; ctx.lineWidth = 0.5;
             for (let x = GRID_SPACING; x < canvas.width; x += GRID_SPACING) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
@@ -491,7 +501,9 @@
         function drawPath(pathIndices, color, lineWidth) {
             if (!pathIndices || pathIndices.length < 2) return;
             const firstCityIndex = pathIndices[0];
-            if (!cities[firstCityIndex]) return; 
+             // Ensure cities array and the specific city index are valid before trying to access city.x/city.y
+            if (!cities || cities.length === 0 || !cities[firstCityIndex]) return;
+
 
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
@@ -499,7 +511,7 @@
             ctx.moveTo(cities[firstCityIndex].x, cities[firstCityIndex].y);
             for (let i = 1; i < pathIndices.length; i++) {
                  const cityIndex = pathIndices[i];
-                 if (cities[cityIndex]) {
+                 if (cities[cityIndex]) { // Check if city at this index exists
                     ctx.lineTo(cities[cityIndex].x, cities[cityIndex].y);
                  } else {
                     console.warn(`City at index ${cityIndex} not found for drawing path.`);
@@ -510,17 +522,18 @@
         }
         
         function redrawCanvas(currentPath = null, currentCalcEdge = null, finalOptimalPath = null) {
+            if (!ctx) return; // Ensure context is available
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // drawGrid(); // Optional: if grid is desired
+            // drawGrid(); 
             drawCityCircles(); 
 
             if (finalOptimalPath && finalOptimalPath.length > 0) {
                 drawPath(finalOptimalPath, PATH_COLOR_TOUR, 2.5); 
-                if (finalOptimalPath.length === N && N > 0 && cities[finalOptimalPath[0]]) { // Ensure N > 0 for finalOptimalPath[0] access
+                if (finalOptimalPath.length === N && N > 0 && cities[finalOptimalPath[0]]) { 
                     drawPath([finalOptimalPath[finalOptimalPath.length - 1], finalOptimalPath[0]], PATH_COLOR_TOUR, 2.5);
                 }
             } else if (currentPath && currentPath.length > 0) { 
-                drawPath(currentPath, PATH_COLOR_CALC_EDGE, 1.5); // Use a less prominent color for intermediate paths
+                drawPath(currentPath, PATH_COLOR_CALC_EDGE, 1.5); 
             }
             
             if (currentCalcEdge && cities[currentCalcEdge.from] && cities[currentCalcEdge.to]) { 
@@ -536,9 +549,8 @@
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
-            // Ensure city ID is based on actual city index for consistency if needed
             cities.push({ x, y, id: cityIdCounter }); 
-            cityIdCounter++; // Increment after assigning current ID
+            cityIdCounter++; 
             N = cities.length;
             redrawCanvas();
             addLog(`Added City ${cityIdCounter-1} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
@@ -547,20 +559,20 @@
         generateCitiesBtn.addEventListener('click', () => {
             if (isSolving_HK) return;
             cities = [];
-            cityIdCounter = 0; // Reset counter for new generation
+            cityIdCounter = 0; 
             N = Math.min(parseInt(numCitiesInput.value), parseInt(numCitiesInput.max)); 
-            numCitiesInput.value = N; // Reflect actual number generated if max was hit
+            numCitiesInput.value = N; 
 
             for (let i = 0; i < N; i++) {
                 cities.push({
                     x: Math.random() * (canvas.width - 2 * (CITY_RADIUS + 10)) + (CITY_RADIUS + 10),
                     y: Math.random() * (canvas.height - 2 * (CITY_RADIUS + 10)) + (CITY_RADIUS + 10),
-                    id: cityIdCounter++ // Assign and then increment
+                    id: cityIdCounter++ 
                 });
             }
             redrawCanvas();
             addLog(`Generated ${N} random cities.`);
-            resetSolutionUIOnly(); // Reset only solution part, keep cities
+            resetSolutionUIOnly(); 
         });
         
         // UI Reset (partial, keeps cities)
@@ -608,23 +620,23 @@
             pauseBtn.disabled = true;
             resetBtn.disabled = false;
             generateCitiesBtn.disabled = false;
-            redrawCanvas();
+            resizeHeldKarpCanvasAndRedraw(); // Ensure canvas is sized correctly on reset
         }
         
-        // Held-Karp Algorithm Logic
+        // Held-Karp Algorithm Logic (Generator and supporting functions)
         function calculateDistanceMatrix() {
             distMatrix = Array(N).fill(null).map(() => Array(N).fill(0));
             for (let i = 0; i < N; i++) {
-                for (let j = i; j < N; j++) { // Only calculate for j >= i to avoid redundant calcs
+                for (let j = i; j < N; j++) { 
                     if (i === j) continue;
                     const d = Math.sqrt(Math.pow(cities[i].x - cities[j].x, 2) + Math.pow(cities[i].y - cities[j].y, 2));
                     distMatrix[i][j] = d;
-                    distMatrix[j][i] = d; // Symmetric
+                    distMatrix[j][i] = d; 
                 }
             }
         }
 
-        function getSubsetCities(mask) { // Get city indices from mask
+        function getSubsetCities(mask) { 
             const subset = [];
             for (let i = 0; i < N; i++) {
                 if ((mask >> i) & 1) subset.push(i);
@@ -635,49 +647,42 @@
         function initializeHeldKarpDPTableHTML() {
             dpTableContainerHeldKarp.innerHTML = '';
             const table = document.createElement('table');
-            table.className = 'dp-table w-full border-collapse'; // Ensure consistent table class
+            table.className = 'dp-table w-full border-collapse'; 
             const thead = table.createTHead();
             const headerRow = thead.insertRow();
             
             const thCorner = document.createElement('th');
-            thCorner.innerHTML = 'Subset {Cities}<span class="text-xs text-slate-400">\\End@</span>'; // Corrected typo
+            thCorner.innerHTML = 'Subset {Cities}<span class="text-xs text-slate-400">\\End@</span>'; 
             headerRow.appendChild(thCorner);
 
             for (let j = 0; j < N; j++) { 
                 const th = document.createElement('th');
-                th.textContent = `C${cities[j].id}`; // Use city ID
+                th.textContent = `C${cities[j].id}`; 
                 headerRow.appendChild(th);
             }
             
             const tbody = table.createTBody();
             dpTableElements_HK = {}; 
 
-            // Iterate through masks that represent subsets
             for (let mask = 1; mask < (1 << N); mask++) {
-                if (!((mask >> 0) & 1)) continue; // Subset must include start city 0
+                if (!((mask >> 0) & 1)) continue; 
 
                 const subsetIndices = getSubsetCities(mask);
-                const subsetCityIds = subsetIndices.map(idx => cities[idx].id); // Get city IDs for display
+                const subsetCityIds = subsetIndices.map(idx => cities[idx].id); 
 
                 if (subsetIndices.length === 0) continue; 
 
                 const row = tbody.insertRow();
                 const thSubset = document.createElement('th');
-                // Display subset as {CityID1, CityID2,...} and binary mask
                 thSubset.innerHTML = `{${subsetCityIds.join(',')}}<br><span class="text-xs text-slate-400">(m:${mask.toString(2).padStart(N, '0')})</span>`;
                 row.appendChild(thSubset);
 
                 dpTableElements_HK[mask] = {};
-                for (let j = 0; j < N; j++) { // End city j
+                for (let j = 0; j < N; j++) { 
                     const cell = row.insertCell();
-                    cell.textContent = '∞'; // Default to infinity
-                    // Conditions for valid cells:
-                    // 1. End city j must be in the current subset (mask).
-                    // 2. If the subset is just the start city {0} (mask is 1<<0), only cell for end_city=0 is 0.
-                    // 3. Other cells for subset {0} are invalid/infinity.
-                    // 4. If subset_size > 1, end_city j cannot be the start_city 0 (unless it's the final return, handled later).
+                    cell.textContent = '∞'; 
                     if (!((mask >> j) & 1) || (mask === (1 << 0) && j !== 0) || (subsetIndices.length > 1 && j === 0) ) { 
-                        cell.textContent = '-'; // Invalid cell
+                        cell.textContent = '-'; 
                         cell.classList.add('text-slate-300');
                     }
                     dpTableElements_HK[mask][j] = cell;
@@ -701,7 +706,7 @@
         async function* heldKarpGenerator() {
             if (N < 1) {
                 addLog("Error: At least 1 city is required for Held-Karp.");
-                yield; // End generator
+                yield; 
                 return;
             }
             calculateDistanceMatrix();
@@ -709,12 +714,11 @@
             dp_HK = {}; 
             path_HK = {};
 
-            // Base cases: dp[{0,i}][i] = dist(0,i)
             highlightCodeLine_HK(7);
-            for (let i = 1; i < N; i++) { // End city i (cannot be start city 0 for this base case)
-                const mask = (1 << 0) | (1 << i); // Subset {0, i}
-                dp_HK[[mask, i]] = distMatrix[0][i]; // Key as array [mask, i]
-                path_HK[[mask, i]] = 0; // Previous city is 0
+            for (let i = 1; i < N; i++) { 
+                const mask = (1 << 0) | (1 << i); 
+                dp_HK[[mask, i]] = distMatrix[0][i]; 
+                path_HK[[mask, i]] = 0; 
                 if (dpTableElements_HK[mask] && dpTableElements_HK[mask][i]) {
                      dpTableElements_HK[mask][i].textContent = dp_HK[[mask,i]].toFixed(1);
                      dpTableElements_HK[mask][i].classList.add('highlight-calculated', 'text-item-taken-in-dp');
@@ -725,7 +729,7 @@
                 highlightCodeLine_HK(9); await sleep(animationSpeed_HK/2);
                 yield; 
             }
-             if (N === 1) { // Special case for single city
+             if (N === 1) { 
                 dp_HK[[(1<<0), 0]] = 0;
                  if (dpTableElements_HK[(1<<0)] && dpTableElements_HK[(1<<0)][0]) {
                      dpTableElements_HK[(1<<0)][0].textContent = '0';
@@ -736,22 +740,19 @@
             }
 
 
-            // Iterate over subset sizes
             highlightCodeLine_HK(11);
-            for (let s = 3; s <= N; s++) { // Subset size s
+            for (let s = 3; s <= N; s++) { 
                 addLog(`\nProcessing subsets of size ${s}:`);
-                // Iterate over all subsets of size s that include city 0
                 for (let mask = 1; mask < (1 << N); mask++) {
                     const subsetIndices = getSubsetCities(mask);
-                    if (!((mask >> 0) & 1) || subsetIndices.length !== s) continue; // Must include start city 0 and be of size s
+                    if (!((mask >> 0) & 1) || subsetIndices.length !== s) continue; 
                     
                     highlightCodeLine_HK(12); await sleep(animationSpeed_HK/4);
                     highlightCodeLine_HK(13); await sleep(animationSpeed_HK/4);
 
-                    // Iterate over j as the end city in the subset (j != 0)
                     highlightCodeLine_HK(15);
                     for (const j of subsetIndices) {
-                        if (j === 0) continue; // End city cannot be start city at this stage
+                        if (j === 0) continue; 
                         
                         clearAllHighlights();
                         if (dpTableElements_HK[mask] && dpTableElements_HK[mask][j]) {
@@ -765,14 +766,13 @@
                         let minCostForCurrentCell = Infinity;
                         let bestPrevK = -1;
 
-                        const prevMask = mask ^ (1 << j); // Subset without j
+                        const prevMask = mask ^ (1 << j); 
                         highlightCodeLine_HK(18); await sleep(animationSpeed_HK/4);
                         
-                        // Iterate over k as the city before j in the subset (k != j, k in prevMask)
                         highlightCodeLine_HK(22);
                         const prevSubsetIndices = getSubsetCities(prevMask);
                         for (const k of prevSubsetIndices) {
-                            if (k === j) continue; // k must be different from j
+                            if (k === j) continue; 
                             highlightCodeLine_HK(23); await sleep(animationSpeed_HK/4);
 
                             if (dp_HK[[prevMask, k]] !== undefined && dp_HK[[prevMask, k]] !== Infinity) {
@@ -822,16 +822,15 @@
                 }
             }
             
-            // Final step: calculate total cost by returning to city 0
             let minTotalCost = Infinity;
             let lastCityBeforeReturning = -1;
             if (N > 1) {
-                const finalMask = (1 << N) - 1; // Mask representing all cities visited
+                const finalMask = (1 << N) - 1; 
                 highlightCodeLine_HK(34);
 
                 addLog("\nFinal step: Calculating return to start city C0:");
                 highlightCodeLine_HK(38);
-                for (let j = 1; j < N; j++) { // Last city j before returning to 0
+                for (let j = 1; j < N; j++) { 
                     clearAllHighlights();
                     if (dp_HK[[finalMask, j]] !== undefined && dp_HK[[finalMask, j]] !== Infinity) {
                         highlightCodeLine_HK(39);
@@ -852,7 +851,7 @@
                         }
                     }
                 }
-            } else if (N === 1) { // If only one city, cost is 0
+            } else if (N === 1) { 
                 minTotalCost = 0;
                 lastCityBeforeReturning = 0; 
             }
@@ -864,37 +863,36 @@
              addLog(`-> Minimum total tour cost: ${minTotalCost === Infinity ? 'N/A' : minTotalCost.toFixed(1)} (last city before returning to C0 is C${cities[lastCityBeforeReturning] ? cities[lastCityBeforeReturning].id : 'N/A'})`);
             yield; 
 
-            // Reconstruct path
             highlightCodeLine_HK(44);
             let reconstructedPathIndices = [];
             if (minTotalCost !== Infinity) {
                 let currCityIndex = lastCityBeforeReturning;
                 let currentMask = (1 << N) - 1;
                 
-                while (currCityIndex !== undefined && currCityIndex !== -1 && currentMask !== 0 && currCityIndex !==0 ) { // Stop if back to city 0 or invalid
+                while (currCityIndex !== undefined && currCityIndex !== -1 && currentMask !== 0 && currCityIndex !==0 ) { 
                     reconstructedPathIndices.unshift(currCityIndex);
-                     if(Object.keys(path_HK).length === 0 && N > 1 && currCityIndex === lastCityBeforeReturning){ // Handle simple N=2 case from base
+                     if(Object.keys(path_HK).length === 0 && N > 1 && currCityIndex === lastCityBeforeReturning){ 
                         reconstructedPathIndices.unshift(0);
                         break;
                     }
-                    if (!path_HK[[currentMask, currCityIndex]] && currentMask === ((1<<0) | (1<<currCityIndex)) ) { // Base case for N=2 or first step from start
+                    if (!path_HK[[currentMask, currCityIndex]] && currentMask === ((1<<0) | (1<<currCityIndex)) ) { 
                          reconstructedPathIndices.unshift(0);
                          break;
                     }
 
                     const prevCityIndex = path_HK[[currentMask, currCityIndex]];
                     if (prevCityIndex === undefined || prevCityIndex === -1 ) {
-                        if (currentMask !== (1 << currCityIndex) ) { // Avoid warning if it's a base case {0, currCityIndex}
+                        if (currentMask !== (1 << currCityIndex) ) { 
                             addLog(`Warning: Path reconstruction issue. Could not find predecessor for city C${cities[currCityIndex].id} in mask ${currentMask.toString(2)}.`);
                         }
-                         if (currentMask === ((1<<0) | (1<<currCityIndex)) && prevCityIndex === undefined) { // If path_HK not set for base
+                         if (currentMask === ((1<<0) | (1<<currCityIndex)) && prevCityIndex === undefined) { 
                             reconstructedPathIndices.unshift(0);
                         }
                         break; 
                     }
-                    currentMask ^= (1 << currCityIndex); // Remove current city from mask
+                    currentMask ^= (1 << currCityIndex); 
                     currCityIndex = prevCityIndex;
-                    if (reconstructedPathIndices.includes(currCityIndex) && currCityIndex !==0) break; // Avoid cycles not involving start
+                    if (reconstructedPathIndices.includes(currCityIndex) && currCityIndex !==0) break; 
                 }
                  if (N > 0 && (reconstructedPathIndices.length === 0 || reconstructedPathIndices[0] !== 0)) { 
                     if (!reconstructedPathIndices.includes(0)) reconstructedPathIndices.unshift(0);
@@ -942,7 +940,7 @@
             if (cities.length < 1) { 
                 addLog("Error: Add at least 1 city to run Held-Karp."); return;
             }
-             if (cities.length > parseInt(numCitiesInput.max)) { //Max check
+             if (cities.length > parseInt(numCitiesInput.max)) { 
                 addLog(`Error: Max ${numCitiesInput.max} cities for Held-Karp visualization due to complexity.`); return;
             }
 
@@ -999,8 +997,8 @@
 
             if (isSolving_HK) { 
                 startBtn.disabled = true;
-                stepBtn.disabled = false; // Allow stepping when paused
-                autoBtn.disabled = false; // Allow resuming autoplay
+                stepBtn.disabled = false; 
+                autoBtn.disabled = false; 
                 pauseBtn.disabled = true;
                 resetBtn.disabled = false;
                 generateCitiesBtn.disabled = true; 
@@ -1013,10 +1011,9 @@
             autoplayTimeoutId_HK = null;
             isSolving_HK = false;
             isPaused_HK = false;
-            currentStepGenerator_HK = null; // Clear generator
+            currentStepGenerator_HK = null; 
             addLog("--- Held-Karp Algorithm Finished ---");
             
-            // Final display of results is handled by the generator's last yield
             startBtn.disabled = false;
             stepBtn.disabled = true;
             autoBtn.disabled = true;
@@ -1034,9 +1031,9 @@
         startBtn.addEventListener('click', startExecution_HK);
         stepBtn.addEventListener('click', processStep_HK);
         autoBtn.addEventListener('click', () => { 
-            if(isSolving_HK && isPaused_HK){ // If paused, resume
+            if(isSolving_HK && isPaused_HK){ 
                 startAutoplay_HK();
-            } else if (!isSolving_HK) { // If not solving, start new
+            } else if (!isSolving_HK) { 
                 startExecution_HK(); 
             }
         });
@@ -1053,10 +1050,11 @@
             codeTitle.classList.toggle('expanded');
         });
         
-        // Initial call
-        resetAll();
-        // Optional: generate initial cities on load
-        // generateCitiesBtn.click(); 
+        // Initial setup: Add resize listener and call reset
+        window.addEventListener('resize', resizeHeldKarpCanvasAndRedraw);
+        document.addEventListener('DOMContentLoaded', () => {
+            resetAll(); // This will also call resizeHeldKarpCanvasAndRedraw
+        });
 
     </script>
 </body>

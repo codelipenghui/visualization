@@ -236,7 +236,7 @@
         
                 <section class="content-section">
                     <h3 class="text-lg font-semibold mb-2 text-slate-700">City Map</h3>
-                    <canvas id="tsp-canvas"></canvas> {/* Removed fixed width and height attributes */}
+                    <canvas id="tsp-canvas"></canvas> 
                 </section>
         
                 <section class="content-section">
@@ -244,16 +244,17 @@
                     <p id="tsp-path-output" class="text-slate-700 text-sm">Path: <span class="font-semibold">-</span></p>
                     <p id="tsp-distance-output" class="text-slate-700 text-sm">Total Distance: <span class="font-semibold">-</span></p>
                 </section>
-            </div>
 
-             <!-- Right Column -->
-            <div class="md:w-2/5 space-y-6">
                 <section class="content-section">
                      <h3 id="log-title" class="section-title collapsible-title">Log</h3>
                     <div id="tsp-log-area" class="log-area">
                         <p class="text-slate-400">Log messages will appear here...</p>
                     </div>
                 </section>
+            </div>
+
+             <!-- Right Column -->
+            <div class="md:w-2/5 space-y-6">
                 <section class="content-section">
                     <h3 id="code-title" class="section-title collapsible-title expanded">Python Code (Conceptual)</h3>
                     <div id="code-visualization-area-nn" class="code-visualization expanded">
@@ -376,11 +377,8 @@
 
         // Canvas Resizing and Drawing Functions
         function resizeCanvasAndRedraw() {
-            // Set the internal resolution of the canvas to match its displayed size
             canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight; // This will be 400px due to CSS
-
-            // Important: After resizing, redraw everything
+            canvas.height = canvas.clientHeight; 
             redrawCanvasWithCurrentTour();
         }
 
@@ -397,7 +395,7 @@
 
         function drawCities() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // drawGrid(); // Optional: Draw grid if desired
+            // drawGrid(); 
 
             cities.forEach((city, index) => {
                 ctx.beginPath();
@@ -424,8 +422,8 @@
         }
 
         function drawCurrentTourPath() { 
-            if (!cities || cities.length === 0 || !tour || tour.length < 2) return; // Add checks for cities array
-            if (!cities[tour[0]]) return; // Ensure first city in tour exists
+            if (!cities || cities.length === 0 || !tour || tour.length < 2) return; 
+            if (!cities[tour[0]]) return; 
 
             ctx.strokeStyle = PATH_COLOR_DEFAULT; ctx.lineWidth = 1.5; ctx.beginPath();
             ctx.moveTo(cities[tour[0]].x, cities[tour[0]].y);
@@ -436,7 +434,7 @@
         }
         
         function redrawCanvasWithCurrentTour() {
-            if (!ctx) return; // Ensure context is available
+            if (!ctx) return; 
             drawCities();
             drawCurrentTourPath();
         }
@@ -457,7 +455,7 @@
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
             cities.push({ x, y, id: cityIdCounter_NN++ }); 
-            redrawCanvasWithCurrentTour(); // Use redraw that includes current tour if any
+            redrawCanvasWithCurrentTour(); 
             addLog(`Added city ${cityIdCounter_NN-1} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
         });
 
@@ -501,7 +499,7 @@
         function resetSolutionUI_NN(clearCityData = true){ 
             tour = []; totalDistance = 0;
              if (cities && !clearCityData) { 
-                // cities.forEach(c => { if(c) { c.visited = false; c.isCurrent = false;} }); // Not strictly needed as visual state is in currentCityIndex_NN and visited_NN_Map
+                // No specific per-city visual state to reset beyond map and current index
             } else if (clearCityData) {
                 cities = []; cityIdCounter_NN = 0;
             }
@@ -525,7 +523,7 @@
 
             startBtn.disabled = false; generateCitiesBtn.disabled = false;
             stepBtn.disabled = true; autoBtn.disabled = true; pauseBtn.disabled = true;
-            resizeCanvasAndRedraw(); // Ensure canvas is sized correctly on reset
+            resizeCanvasAndRedraw(); 
         }
         
         function distance(cityIdx1, cityIdx2) {
@@ -548,7 +546,7 @@
                     totalDistance += distToStart;
                     tour.push(tour[0]); 
                     addLog(`Returning to start City ${cities[tour[0]].id}. Dist: ${distToStart.toFixed(2)}. Tour complete.`);
-                    if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false;
+                    if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false; // Handled by drawCities logic
                     currentCityIndex_NN = tour[0]; 
                     redrawCanvasWithCurrentTour(); 
                 }
@@ -578,10 +576,9 @@
                 await sleep(animationSpeed_NN);
 
                 totalDistance += minDist;
-                if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false; 
+                // if (currentCityIndex_NN !== undefined && cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = false; // Handled by drawCities
                 currentCityIndex_NN = nearestCityIndex;
                 visited_NN_Map.set(currentCityIndex_NN, true);
-                // if (cities[currentCityIndex_NN]) cities[currentCityIndex_NN].isCurrent = true; // Visual update handled by drawCities
                 tour.push(currentCityIndex_NN);
                 tsp_step_count_NN++;
                 highlightCodeLine_NN(23); await sleep(animationSpeed_NN/3);
@@ -612,7 +609,7 @@
                     if (moreSteps && isSolving_NN && !isPaused_NN) {
                          autoplayTimeoutId_NN = setTimeout(loop, animationSpeed_NN);
                     } else if (!moreSteps && isSolving_NN) { 
-                        // finalizeTSPSolution_NN(); // Is called by processSingleTSPStep_NN
+                        // finalizeTSPSolution_NN(); // Called by process step
                     }
                 } catch(e) {
                     console.error("Error in TSP NN Autoplay:", e);
@@ -641,7 +638,7 @@
 
             pathOutput.textContent = tour.map(idx => cities[idx]? cities[idx].id : '?').join(' -> ');
             distanceOutput.textContent = totalDistance.toFixed(2);
-            if (tour.length > 1) { // Ensure tour actually formed before logging success
+            if (tour.length > 1) { 
                 addLog(`TSP solution found. Total distance: ${totalDistance.toFixed(2)}`);
             } else if (cities.length > 0) {
                 addLog("TSP could not be completed (e.g. not enough cities or error).");
@@ -708,10 +705,9 @@
             speedValueSpan.textContent = `${animationSpeed_NN}ms`;
         });
         
-        // Resize and draw when window size changes or on initial load
         window.addEventListener('resize', resizeCanvasAndRedraw);
         document.addEventListener('DOMContentLoaded', () => {
-            resetAll_NN(); // Call reset on load which includes resize
+            resetAll_NN(); 
         });
 
 
